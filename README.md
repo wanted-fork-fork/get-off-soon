@@ -1,50 +1,23 @@
-# Welcome to your Expo app 👋
+# 곧 내려요 🚉
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+지하철에서 좌석을 양보받고 싶은 사람과 양보하려는 사람을 연결해주는 모바일 앱입니다.
 
-## Get started
+## 시작하기
 
-1. Install dependencies
-
+1. 의존성 설치
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. 앱 실행
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## 개발 가이드
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- UI 개발 시 반드시 피그마 디자인 시스템 준수
+- 컴포넌트 추출 전 사용자 승인 필요
+- 커밋 전 보안 체크리스트 확인
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+자세한 내용은 `.kiro/steering/` 폴더의 가이드라인을 참고하세요.
