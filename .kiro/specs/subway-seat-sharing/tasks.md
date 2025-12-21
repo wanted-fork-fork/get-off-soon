@@ -14,7 +14,7 @@
   - 필요한 의존성 패키지 설치 (React Navigation, AsyncStorage 등)
   - _요구사항: 전체 프로젝트 기반_
 
-- [ ] 1.2 추가 필수 의존성 패키지 설치
+- [x] 1.2 추가 필수 의존성 패키지 설치
   - @react-native-async-storage/async-storage (로컬 데이터 저장)
   - expo-notifications (알림 기능)
   - react-native-svg (아이콘 및 그래픽)
