@@ -32,10 +32,28 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
       {variant === 'home' && (
         <View style={{ flexDirection: 'row', gap: 16 }}>
           <TouchableOpacity>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 16 }}>마이페이지</Text>
+            <Text
+              style={{
+                color: colors.fg.DEFAULT,
+                fontSize: 16,
+                lineHeight: 20,
+                letterSpacing: -0.24,
+              }}
+            >
+              알림
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 16 }}>알림</Text>
+            <Text
+              style={{
+                color: colors.fg.DEFAULT,
+                fontSize: 16,
+                lineHeight: 20,
+                letterSpacing: -0.24,
+              }}
+            >
+              마이페이지
+            </Text>
           </TouchableOpacity>
         </View>
       )}

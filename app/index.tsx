@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
@@ -29,36 +29,18 @@ export default function HomeScreen() {
         <View style={{ gap: 12 }}>
           <RoleCard
             title="곧 내려요"
-            description="앉고 싶은 사람에게 자리 정보 제공"
+            description="내 자리를 다른 사람에게 알려주세요."
             onPress={handleGettingOff}
+            image={require('../assets/images/main_1.png')}
           />
           <RoleCard
             title="앉고 싶어요"
-            description="하차 예정자 보기"
+            description={'곧 내릴 사람을 먼저 확인하고\n편히 앉아가세요.'}
             onPress={handleWantSeat}
+            image={require('../assets/images/main_2.png')}
           />
         </View>
 
-        {/* 최근 여정 카드 */}
-        <TouchableOpacity
-          onPress={() => router.push('/journey-end' as any)}
-          style={{ borderRadius: 12, backgroundColor: colors.surface.deep, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}
-        >
-          <View style={{ gap: 4 }}>
-            <Text style={{ color: colors.accent.link, fontSize: 14, fontWeight: '600' }}>
-              서초 → 잠실새내
-            </Text>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600' }}>
-              여정을 종료했습니다.
-            </Text>
-          </View>
-          {/* 기차 아이콘 자리 */}
-          <View
-            style={{ borderRadius: 8, width: 62, height: 62, backgroundColor: colors.surface.card, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Text style={{ fontSize: 28 }}>🚇</Text>
-          </View>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
