@@ -20,34 +20,59 @@ const TRAIN_OPTIONS: TrainOption[] = [
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
 const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
 
-type Station = { cx: number; cy: number; row: 'top' | 'bottom'; name: string };
+type Station = { cx: number; cy: number; name: string };
 const STATIONS: Station[] = [
-  { cx: 308.5, cy: 122, row: 'top', name: '시청' },
-  { cx: 341.5, cy: 109, row: 'top', name: '을지로입구' },
-  { cx: 383.5, cy: 109, row: 'top', name: '을지로3가' },
-  { cx: 434, cy: 112, row: 'top', name: '을지로4가' },
-  { cx: 482, cy: 112, row: 'top', name: '동대문역사문화공원' },
-  { cx: 531, cy: 109, row: 'top', name: '신당' },
-  { cx: 588, cy: 112, row: 'top', name: '상왕십리' },
-  { cx: 646, cy: 112, row: 'top', name: '왕십리' },
-  { cx: 716, cy: 112, row: 'top', name: '한양대' },
-  { cx: 781, cy: 112, row: 'top', name: '뚝섬' },
-  { cx: 836, cy: 109, row: 'top', name: '성수' },
-  { cx: 891, cy: 112, row: 'top', name: '건대입구' },
-  { cx: 936.5, cy: 123, row: 'top', name: '구의' },
-  { cx: 365.5, cy: 537, row: 'bottom', name: '사당' },
-  { cx: 424, cy: 540, row: 'bottom', name: '방배' },
-  { cx: 471.5, cy: 537, row: 'bottom', name: '서초' },
-  { cx: 510.7, cy: 543.6, row: 'bottom', name: '교대' },
-  { cx: 523.5, cy: 537, row: 'bottom', name: '강남' },
-  { cx: 580.5, cy: 537, row: 'bottom', name: '역삼' },
-  { cx: 622, cy: 540, row: 'bottom', name: '선릉' },
-  { cx: 667.5, cy: 537, row: 'bottom', name: '삼성' },
-  { cx: 711.5, cy: 537, row: 'bottom', name: '종합운동장' },
-  { cx: 757, cy: 540, row: 'bottom', name: '잠실' },
-  { cx: 823, cy: 540, row: 'bottom', name: '잠실나루' },
-  { cx: 863.5, cy: 537, row: 'bottom', name: '강변' },
-  { cx: 900, cy: 540, row: 'bottom', name: '구의' },
+  { cx: 909.5, cy: 33.3, name: '용두' },
+  { cx: 869, cy: 41, name: '신설동' },
+  { cx: 997.5, cy: 56, name: '신답' },
+  { cx: 310.5, cy: 122, name: '이대' },
+  { cx: 343.5, cy: 109, name: '아현' },
+  { cx: 385.5, cy: 109, name: '충정로' },
+  { cx: 432, cy: 112, name: '시청' },
+  { cx: 480, cy: 112, name: '을지로입구' },
+  { cx: 533, cy: 109, name: '을지로3가' },
+  { cx: 586, cy: 112, name: '을지로4가' },
+  { cx: 644, cy: 112, name: '동대문역사문화공원' },
+  { cx: 714, cy: 112, name: '신당' },
+  { cx: 779, cy: 112, name: '상왕십리' },
+  { cx: 838, cy: 109, name: '왕십리' },
+  { cx: 889, cy: 112, name: '한양대' },
+  { cx: 938.5, cy: 123, name: '뚝섬' },
+  { cx: 282, cy: 149, name: '신촌' },
+  { cx: 997.5, cy: 135, name: '성수' },
+  { cx: 966.5, cy: 150, name: '용답' },
+  { cx: 95, cy: 171, name: '까치산' },
+  { cx: 994, cy: 182, name: '건대입구' },
+  { cx: 248, cy: 186, name: '홍대입구' },
+  { cx: 994, cy: 228, name: '구의' },
+  { cx: 247, cy: 236, name: '합정' },
+  { cx: 104.5, cy: 251, name: '신정네거리' },
+  { cx: 997.5, cy: 264, name: '강변' },
+  { cx: 152.5, cy: 299, name: '양천구청' },
+  { cx: 997.5, cy: 300, name: '잠실나루' },
+  { cx: 247, cy: 305, name: '당산' },
+  { cx: 997.5, cy: 340, name: '잠실' },
+  { cx: 251.5, cy: 347, name: '영등포구청' },
+  { cx: 201.5, cy: 349, name: '도림천' },
+  { cx: 994, cy: 384, name: '잠실새내' },
+  { cx: 247, cy: 398, name: '문래' },
+  { cx: 997.5, cy: 417, name: '종합운동장' },
+  { cx: 994, cy: 466, name: '삼성' },
+  { cx: 247, cy: 467, name: '신도림' },
+  { cx: 959.5, cy: 501, name: '선릉' },
+  { cx: 290.5, cy: 504, name: '대림' },
+  { cx: 367.5, cy: 537, name: '구로디지털단지' },
+  { cx: 422, cy: 540, name: '신대방' },
+  { cx: 473.5, cy: 537, name: '신림' },
+  { cx: 525.5, cy: 537, name: '봉천' },
+  { cx: 582.5, cy: 537, name: '서울대입구' },
+  { cx: 620, cy: 540, name: '낙성대' },
+  { cx: 669.5, cy: 537, name: '사당' },
+  { cx: 713.5, cy: 537, name: '방배' },
+  { cx: 755, cy: 540, name: '서초' },
+  { cx: 821, cy: 540, name: '교대' },
+  { cx: 865.5, cy: 537, name: '강남' },
+  { cx: 898, cy: 540, name: '역삼' },
 ];
 
 const HIT_W = 50;
@@ -101,9 +126,7 @@ export default function SelectLineScreen() {
                 {STATIONS.map((s, i) => {
                   const scale = contentHeight / SVG_VIEWBOX.h;
                   const x = s.cx * scale - HIT_W / 2;
-                  const y = s.row === 'top'
-                    ? s.cy * scale - HIT_H + 12
-                    : s.cy * scale - 12;
+                  const y = s.cy * scale - HIT_H / 2;
                   return (
                     <Pressable
                       key={i}

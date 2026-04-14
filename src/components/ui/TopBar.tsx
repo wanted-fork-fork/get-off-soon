@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../../constants/theme';
+import ArrowLeftIcon from '../../../assets/icons/ArrowLeft.svg';
 
 interface TopBarProps {
   variant?: 'home' | 'back' | 'back-action';
@@ -23,9 +24,7 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
         </Text>
       ) : (
         <TouchableOpacity onPress={onBack} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: colors.fg.muted, fontSize: 22 }}>
-            ‹
-          </Text>
+          <ArrowLeftIcon width={24} height={24} />
         </TouchableOpacity>
       )}
 

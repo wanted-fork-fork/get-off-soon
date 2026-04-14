@@ -1,0 +1,52 @@
+import React from 'react';
+import { View, TouchableOpacity, Text } from 'react-native';
+import { colors } from '../../constants/theme';
+
+interface CarGridProps {
+  selected: number[];
+  onToggle: (car: number) => void;
+}
+
+const ROWS: number[][] = [
+  [0, 1, 2, 3, 4],
+  [5, 6, 7, 8, 9],
+];
+
+export function CarGrid({ selected, onToggle }: CarGridProps) {
+  return (
+    <View style={{ gap: 8 }}>
+      {ROWS.map((row, rIdx) => (
+        <View key={rIdx} style={{ flexDirection: 'row', gap: 8 }}>
+          {row.map((car) => {
+            const isSelected = selected.includes(car);
+            return (
+              <TouchableOpacity
+                key={car}
+                activeOpacity={0.8}
+                onPress={() => onToggle(car)}
+                style={{
+                  flex: 1,
+                  height: 56,
+                  borderRadius: 8,
+                  backgroundColor: isSelected ? colors.accent.tab : colors.surface.input,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: isSelected ? colors.white : colors.fg.inactive,
+                    fontSize: 16,
+                    fontWeight: '600',
+                  }}
+                >
+                  {car}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+}
