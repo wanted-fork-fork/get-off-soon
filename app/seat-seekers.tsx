@@ -14,12 +14,12 @@ import { LINE_2_STATIONS } from '../src/constants/subway';
 export default function SeatSeekersScreen() {
   const router = useRouter();
   const { state } = useJourney();
-  const [filterCar, setFilterCar] = useState<number[]>(state.carNumbers);
+  const [filterCar, setFilterCar] = useState<number | null>(state.carNumbers[0] ?? null);
 
   const station = LINE_2_STATIONS.find(s => s.id === state.stationId);
 
   const filteredPersons = MOCK_PERSONS
-    .filter(p => filterCar.length === 0 || filterCar.includes(p.carNumber))
+    .filter(p => filterCar == null || p.carNumber === filterCar)
     .sort((a, b) => a.stopsRemaining - b.stopsRemaining);
 
   const handleEnd = () => {
@@ -27,35 +27,23 @@ export default function SeatSeekersScreen() {
   };
 
   const handleToggleCar = (car: number) => {
-    setFilterCar(prev => {
-      if (prev.includes(car)) return prev.filter(c => c !== car);
-      if (prev.length >= 2) return prev;
-      return [...prev, car];
-    });
+    setFilterCar(car);
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} />
-
-      <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 }}>
-        <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '600', marginBottom: 4 }}>
-          하차 예정자
-        </Text>
-        {station && (
-          <Text style={{ color: colors.accent.link, fontSize: 13, fontWeight: '600' }}>
-            {station.name} 방면
-          </Text>
-        )}
-      </View>
+      <TopBar variant="back" onBack={() => router.back()} title="하차 예정자" />
 
       {/* 탑승칸 필터 */}
-      <View style={{ marginBottom: 8 }}>
-        <CarTabs selected={filterCar} onToggle={handleToggleCar} />
+      <View style={{ marginBottom: 40 }}>
+        <Text style={{ color: colors.fg.muted, fontSize: 12, textAlign: 'right', paddingHorizontal: 16, marginBottom: 16 }}>
+          열차 진행 방향 →
+        </Text>
+        <CarTabs selected={filterCar != null ? [filterCar] : []} onToggle={handleToggleCar} />
       </View>
 
       {/* 정렬 기준 */}
-      <View style={{ paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+      <View style={{ paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginBottom: 8 }}>
         <Text style={{ color: colors.fg.muted, fontSize: 13 }}>
           하차 가까운 순
         </Text>
@@ -77,9 +65,16 @@ export default function SeatSeekersScreen() {
         )}
       </ScrollView>
 
-      <BottomButtonArea>
-        <Button label="여정 종료" onPress={handleEnd} variant="primary" />
-      </BottomButtonArea>
+      <View style={{ backgroundColor: '#1B1D22', borderTopWidth: 1, borderTopColor: '#454A54', paddingHorizontal: 16, paddingBottom: 32, paddingTop: 12 }}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 2 }}>
+            <Button label="먼저 내렸어요" onPress={handleEnd} variant="outline" />
+          </View>
+          <View style={{ flex: 3 }}>
+            <Button label="앉았어요" onPress={handleEnd} variant="primary" />
+          </View>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }

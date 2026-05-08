@@ -28,6 +28,12 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
         </TouchableOpacity>
       )}
 
+      {title && variant !== 'home' && (
+        <Text style={{ position: 'absolute', left: 0, right: 0, textAlign: 'center', color: colors.fg.DEFAULT, fontSize: 17, fontWeight: '600', pointerEvents: 'none' }}>
+          {title}
+        </Text>
+      )}
+
       {variant === 'home' && (
         <View style={{ flexDirection: 'row', gap: 16 }}>
           <TouchableOpacity>

@@ -26,39 +26,28 @@ export default function AppearanceScreen() {
         style={{ flex: 1 }}
       >
         <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 32 }}>
-          <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', marginBottom: 8, lineHeight: 28 }}>
-            착석 희망자가 자리를 찾아오는데{'\n'}도움이 될 만한 인상착의를{'\n'}알려주세요.
-          </Text>
-          <Text style={{ color: colors.fg.muted, fontSize: 14, marginBottom: 32 }}>
-            입력하지 않아도 진행 가능해요.
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', marginBottom: 32, lineHeight: 28 }}>
+            착석 희망자가 자리를 찾아오는데{'\n'}도움이 될 만한 인상착의를 알려주세요.
           </Text>
 
           <TextInput
             value={state.appearance}
             onChangeText={setAppearance}
             placeholder="예: 검정 패딩, 파란 백팩, 흰 운동화"
-            placeholderTextColor="#797E86"
-            multiline
+            placeholderTextColor="#484B51"
             style={{
-              backgroundColor: colors.surface.input,
               color: colors.fg.DEFAULT,
-              borderRadius: 12,
-              padding: 16,
               fontSize: 16,
-              minHeight: 100,
-              textAlignVertical: 'top',
+              paddingVertical: 12,
+              borderBottomWidth: 2,
+              borderBottomColor: '#0095F8',
             }}
           />
 
-          {state.appearance.length > 0 && (
-            <Text style={{ color: colors.fg.muted, fontSize: 12, marginTop: 8, textAlign: 'right' }}>
-              {state.appearance.length}자
-            </Text>
-          )}
         </View>
 
         <BottomButtonArea>
-          <Button label="완료" onPress={handleDone} />
+          <Button label="하차 정보를 공유할게요" onPress={handleDone} />
         </BottomButtonArea>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -21,4 +21,6 @@ export interface Person {
   carNumber: number;
   seatZone: string;
   appearance?: string;
+  currentStation?: string;
+  destinationStation?: string;
 }

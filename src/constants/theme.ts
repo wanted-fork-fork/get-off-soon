@@ -3,6 +3,8 @@ export const colors = {
     DEFAULT: '#1B1D22',
     card: '#262A30',
     input: '#272B34',
+    inputActive: '#343B47',
+    disabled: '#22272F',
     deep: '#0F1113',
   },
   fg: {
@@ -10,6 +12,7 @@ export const colors = {
     secondary: '#92969F',
     muted: '#797E86',
     inactive: '#C2C2C2',
+    disabled: '#505562',
     onAccent: '#EEEEEF',
   },
   accent: {
