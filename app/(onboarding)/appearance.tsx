@@ -13,7 +13,11 @@ export default function AppearanceScreen() {
   const { state, setAppearance } = useJourney();
 
   const handleDone = () => {
-    router.push('/seat-seekers' as any);
+    if (state.role === 'getting-off') {
+      router.push('/getting-off-status' as any);
+    } else {
+      router.push('/seat-seekers' as any);
+    }
   };
 
   return (

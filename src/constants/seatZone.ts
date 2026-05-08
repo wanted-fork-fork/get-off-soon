@@ -1,0 +1,13 @@
+export const SEAT_ZONE_LABELS: Record<string, string> = {
+  A: '가는 방향 기준 왼쪽 앞 구역',
+  B: '가는 방향 기준 오른쪽 앞 구역',
+  C: '가는 방향 기준 왼쪽 중간 구역',
+  D: '가는 방향 기준 오른쪽 중간 구역',
+  E: '가는 방향 기준 왼쪽 뒤 구역',
+  F: '가는 방향 기준 오른쪽 뒤 구역',
+};
+
+export function getSeatZoneLabel(zone: string | null): string {
+  if (!zone) return '미선택';
+  return SEAT_ZONE_LABELS[zone] ?? zone;
+}

@@ -1,0 +1,145 @@
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useJourney } from '../src/context/JourneyContext';
+import { colors } from '../src/constants/theme';
+import { getSeatZoneLabel } from '../src/constants/seatZone';
+import { Button } from '../src/components/ui/Button';
+import CallIcon from '../assets/icons/Call.svg';
+import EmailIcon from '../assets/icons/Email.svg';
+import TrainIcon from '../assets/icons/Train.svg';
+import EditIcon from '../assets/icons/Edit.svg';
+
+function EditButton({ onPress }: { onPress?: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} style={{ padding: 8 }}>
+      <EditIcon width={20} height={20} />
+    </TouchableOpacity>
+  );
+}
+
+export default function GettingOffStatusScreen() {
+  const router = useRouter();
+  const { state } = useJourney();
+
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+  const carLabel = state.carNumbers.length > 0
+    ? state.carNumbers.join('·') + '호차'
+    : '미선택';
+
+  const handleEnd = () => {
+    router.push('/journey-end' as any);
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#262A30' }} edges={['top']}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 12 }}>
+          <TouchableOpacity onPress={handleEnd} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 24 }}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 28, fontWeight: '700', marginBottom: 8 }}>
+            {timeStr} 하차 예정
+          </Text>
+          <Text style={{ color: colors.fg.muted, fontSize: 14, marginBottom: 32 }}>
+            착석 희망자에게 내 하차 정보가 공유되고 있어요.
+          </Text>
+
+          <View style={{ marginTop: 32, marginBottom: 24, marginHorizontal: 32 - 24, height: 80 }}>
+            <TrainIcon
+              width={73}
+              height={32}
+              style={{ position: 'absolute', top: 8, left: '40%', marginLeft: -73 / 2, zIndex: 2 }}
+            />
+            <View style={{ position: 'absolute', left: 0, right: 0, top: 38, height: 6, backgroundColor: '#434B5B', borderRadius: 3 }}>
+              <View style={{ height: 6, width: '40%', backgroundColor: colors.accent.blue, borderRadius: 3 }} />
+            </View>
+            <View style={{ position: 'absolute', left: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginLeft: -34 }}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#13A51D', backgroundColor: colors.surface.DEFAULT }} />
+              <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
+                {state.stationId ?? '출발역'}
+              </Text>
+            </View>
+            <View style={{ position: 'absolute', right: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginRight: -34 }}>
+              <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#CC4B2B', backgroundColor: colors.surface.DEFAULT }} />
+              <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
+                {state.stationId ?? '도착역'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ backgroundColor: '#1B1D22', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 24, paddingTop: 28, paddingBottom: 24, marginTop: 8, flex: 1 }}>
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '700', marginBottom: 16 }}>
+            자리 정보
+          </Text>
+
+          <View style={{ backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <View>
+              <Text style={{ color: colors.fg.muted, fontSize: 14, fontWeight: '400', letterSpacing: 14 * -0.015, marginBottom: 8 }}>탑승 칸</Text>
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '500' }}>{carLabel}</Text>
+            </View>
+            <EditButton />
+          </View>
+
+          <View style={{ backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+            <View>
+              <Text style={{ color: colors.fg.muted, fontSize: 14, fontWeight: '400', letterSpacing: 14 * -0.015, marginBottom: 8 }}>좌석 구역</Text>
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '500' }}>
+                {getSeatZoneLabel(state.seatZone)}
+              </Text>
+            </View>
+            <EditButton />
+          </View>
+
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '700', marginBottom: 16 }}>
+            인상 착의
+          </Text>
+
+          <View style={{ backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, flex: 1, marginRight: 8 }} numberOfLines={2}>
+              {state.appearance || '미입력'}
+            </Text>
+            <EditButton />
+          </View>
+
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 16, fontWeight: '700', marginBottom: 16 }}>
+            열차 내 불편 신고
+          </Text>
+
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+              <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>범죄 및 위급상황</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <CallIcon width={16} height={16} />
+                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>00-000-0000</Text>
+              </View>
+            </View>
+            <View style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+              <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>기타 민원</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <EmailIcon width={16} height={16} />
+                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>00-000-0000</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      <View style={{ backgroundColor: '#1B1D22', paddingHorizontal: 16, paddingBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2E3138' }}>
+        <TouchableOpacity
+          onPress={handleEnd}
+          style={{ borderRadius: 12, borderWidth: 1, borderColor: '#0095F8', height: 48, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ color: '#0095F8', fontSize: 16, fontWeight: '400' }}>먼저 내렸어요</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
