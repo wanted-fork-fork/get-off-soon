@@ -7,15 +7,15 @@ import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { Button, BottomButtonArea } from '../../src/components/ui/Button';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
+import { Image } from 'react-native';
 import SeatFrame from '../../assets/icons/SeatFrame.svg';
-import SeatOccupant from '../../assets/icons/SeatOccupant.svg';
-import SeatOccupantFlipped from '../../assets/icons/SeatOccupantFlipped.svg';
 
 // 프레임 SVG viewBox 기준 비율 상수
 // 좌석 배치는 이 비율로 계산되어 문(손잡이 바)에 살짝 걸치는 사이즈가 됨
 const FRAME_W = 297;
 const FRAME_H = 555;
-const SEAT_COLOR = '#2A3040';
+const SEAT_COLOR = '#424B62';
+const OCCUPANT_COLOR = '#343B4B';
 
 // 좌석 열 flex 비율: occupant(55) + gap(28) + seat(104)×3 + gap(28)×3 + occupant(55) = 534
 const FLEX = { occupant: 55, seat: 104, gap: 28 } as const;
@@ -87,11 +87,10 @@ function SeatColumn({
   onSelect: (id: string) => void;
   side: 'left' | 'right';
 }) {
-  const Icon = side === 'left' ? SeatOccupant : SeatOccupantFlipped;
 
   return (
     <View style={{ width: 68 }}>
-      <OccupantCell Icon={Icon} />
+      <OccupantCell />
       <View style={{ flex: FLEX.gap }} />
 
       {ids.map((id, i) => (
@@ -109,23 +108,27 @@ function SeatColumn({
       ))}
 
       <View style={{ flex: FLEX.gap }} />
-      <OccupantCell Icon={Icon} />
+      <OccupantCell />
     </View>
   );
 }
 
-function OccupantCell({ Icon }: { Icon: React.ComponentType<{ width: number; height: number }> }) {
+function OccupantCell() {
   return (
     <View
       style={{
         flex: FLEX.occupant,
         borderRadius: 8,
-        backgroundColor: SEAT_COLOR,
+        backgroundColor: OCCUPANT_COLOR,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Icon width={36} height={36} />
+      <Image
+        source={require('../../assets/images/priority-seat.png')}
+        style={{ width: 28, height: 28, tintColor: '#5A6275' }}
+        resizeMode="contain"
+      />
     </View>
   );
 }
