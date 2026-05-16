@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
@@ -41,7 +41,41 @@ export default function HomeScreen() {
           />
         </View>
 
+
       </ScrollView>
+
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 40,
+          left: 16,
+          right: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: '#101114',
+          borderWidth: 1,
+          borderColor: '#454A54',
+          borderRadius: 99,
+          paddingVertical: 16,
+          paddingLeft: 32,
+          paddingRight: 32,
+          gap: 24,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#7BA7FF', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+            서초 → 잠실새내
+          </Text>
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
+            여정을 종료했습니다.
+          </Text>
+        </View>
+        <Image
+          source={require('../assets/images/shoes.png')}
+          style={{ width: 56, height: 56 }}
+          resizeMode="contain"
+        />
+      </View>
     </SafeAreaView>
   );
 }
