@@ -57,7 +57,7 @@ export default function AppearanceScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} />
+      <TopBar variant="back" onBack={() => router.back()} title="인상착의" />
       <ProgressBar current={5} total={5} />
 
       <KeyboardAvoidingView

@@ -54,7 +54,7 @@ export default function SelectCarScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} />
+      <TopBar variant="back" onBack={() => router.back()} title="자리 정보" />
       <ProgressBar current={3} total={totalSteps} />
 
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 32 }}>

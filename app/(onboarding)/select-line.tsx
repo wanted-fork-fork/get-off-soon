@@ -121,7 +121,7 @@ export default function SelectLineScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} />
+      <TopBar variant="back" onBack={() => router.back()} title="여정 선택" />
       <ProgressBar current={1} total={totalSteps} />
 
       <View style={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 16 }}>
