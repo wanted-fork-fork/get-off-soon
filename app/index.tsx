@@ -32,6 +32,7 @@ export default function HomeScreen() {
 
   const [activeShare, setActiveShare] = useState<ActiveShare | null>(null);
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
+  const [loadingActive, setLoadingActive] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -74,6 +75,8 @@ export default function HomeScreen() {
           return;
         }
         throw e;
+      } finally {
+        setLoadingActive(false);
       }
     })();
   }, []);
@@ -106,6 +109,8 @@ export default function HomeScreen() {
   };
 
   const renderPill = () => {
+    if (loadingActive) return null;
+
     if (activeShare) {
       const top = `${activeShare.boardStationName ?? '출발'} → ${activeShare.getOffStationName ?? '도착'}`;
       return (
@@ -154,23 +159,7 @@ export default function HomeScreen() {
       );
     }
 
-    return (
-      <View style={pillBaseStyle}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: '#7BA7FF', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
-            서초 → 잠실새내
-          </Text>
-          <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
-            여정을 종료했습니다.
-          </Text>
-        </View>
-        <Image
-          source={require('../assets/images/shoes.png')}
-          style={{ width: 56, height: 56 }}
-          resizeMode="contain"
-        />
-      </View>
-    );
+    return null;
   };
 
   return (

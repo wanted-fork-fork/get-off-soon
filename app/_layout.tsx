@@ -2,9 +2,10 @@ import { Stack } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, TextInput } from 'react-native';
 import { JourneyProvider } from '../src/context/JourneyContext';
+import { bootstrapAuth } from '../src/api/tokenStore';
 import '../src/shared/styles/global.css';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,14 +27,21 @@ export default function RootLayout() {
     'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.ttf'),
     'Pretendard-Bold': require('../assets/fonts/Pretendard-Bold.ttf'),
   });
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    bootstrapAuth()
+      .catch((err) => console.warn('[auth] bootstrap failed', err))
+      .finally(() => setAuthReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded && authReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, authReady]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !authReady) return null;
 
   return (
     <SafeAreaProvider>
