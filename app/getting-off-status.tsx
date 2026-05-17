@@ -90,7 +90,7 @@ export default function GettingOffStatusScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#262A30' }} edges={['top']}>
       <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 12 }}>
-        <TouchableOpacity onPress={handleEnd} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={() => router.replace('/' as any)} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: colors.fg.DEFAULT, fontSize: 24 }}>✕</Text>
         </TouchableOpacity>
       </View>

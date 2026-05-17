@@ -28,6 +28,7 @@ export default function HomeScreen() {
     setAppearance,
     setShareId,
     setRequestId,
+    reset,
   } = useJourney();
 
   const [activeShare, setActiveShare] = useState<ActiveShare | null>(null);
@@ -82,11 +83,13 @@ export default function HomeScreen() {
   }, []);
 
   const handleGettingOff = () => {
+    reset();
     setRole('getting-off');
     router.push('/(onboarding)/select-line' as any);
   };
 
   const handleWantSeat = () => {
+    reset();
     setRole('want-seat');
     router.push('/(onboarding)/select-line' as any);
   };

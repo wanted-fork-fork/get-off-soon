@@ -15,6 +15,17 @@ import Line2Svg from '../../assets/icons/line_2.svg';
 
 type Train = NonNullable<GetTrainsByStationResponse['trains']>[number];
 
+// 서울 공공 API arvlCd 매핑 (백엔드 trainStatus가 그대로 받아옴)
+const TRAIN_STATUS_LABEL: Record<number, string> = {
+  0: '당역 접근',
+  1: '당역 도착',
+  2: '출발',
+  3: '전역 출발',
+  4: '전역 진입',
+  5: '전역 도착',
+  99: '운행중',
+};
+
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
 const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
 
@@ -234,10 +245,12 @@ export default function SelectLineScreen() {
                       marginRight: 8,
                     }}
                   >
-                    {train.trainNo}열차
+                    {typeof train.trainStatus === 'number'
+                      ? (TRAIN_STATUS_LABEL[train.trainStatus] ?? `${train.trainNo}열차`)
+                      : `${train.trainNo}열차`}
                   </Text>
                   <Text style={{ color: colors.fg.secondary, fontSize: 13 }}>
-                    {currentStationName ?? '정보 없음'} 부근
+                    {train.trainNo}열차 · {currentStationName ?? '정보 없음'}
                   </Text>
                 </TouchableOpacity>
               );

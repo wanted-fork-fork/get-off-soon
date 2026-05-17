@@ -72,9 +72,11 @@ async function tryRefresh(): Promise<string | null> {
 }
 
 export async function apiFetch<T>(path: string, options: FetchOptions): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (options.auth && tokenStore) {
     const token = await tokenStore.getAccessToken();

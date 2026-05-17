@@ -19,7 +19,7 @@ TextInputAny.defaultProps = TextInputAny.defaultProps || {};
 TextInputAny.defaultProps.style = [{ fontFamily: 'Pretendard-Regular' }, TextInputAny.defaultProps.style];
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'Paperlogy-Bold': require('../assets/fonts/Paperlogy-7Bold.ttf'),
     'Paperlogy-ExtraBold': require('../assets/fonts/Paperlogy-8ExtraBold.ttf'),
     'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.ttf'),
@@ -36,17 +36,23 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && authReady) {
+    if ((fontsLoaded || fontError) && authReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, authReady]);
+  }, [fontsLoaded, fontError, authReady]);
 
-  if (!fontsLoaded || !authReady) return null;
+  if (!(fontsLoaded || fontError) || !authReady) return null;
 
   return (
     <SafeAreaProvider>
       <JourneyProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#1B1D22' },
+            animation: 'fade',
+          }}
+        />
       </JourneyProvider>
     </SafeAreaProvider>
   );
