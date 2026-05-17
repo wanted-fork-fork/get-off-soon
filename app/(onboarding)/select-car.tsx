@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TopBar } from '../../src/components/ui/TopBar';
@@ -9,20 +9,44 @@ import { Button, BottomButtonArea } from '../../src/components/ui/Button';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
+import { createSeatRequest } from '../../src/api/generated';
+import { ApiError } from '../../src/api/client';
 import QuestionIcon from '../../assets/icons/Question.svg';
 
 export default function SelectCarScreen() {
   const router = useRouter();
-  const { state, toggleCar } = useJourney();
+  const { state, toggleCar, setRequestId } = useJourney();
   const [helpOpen, setHelpOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const totalSteps = state.role === 'getting-off' ? 5 : 3;
   const isLastStep = state.role === 'want-seat';
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (state.carNumbers.length === 0) return;
     if (isLastStep) {
-      router.push('/getting-off-list' as any);
+      if (!state.trainId || !state.stationId || state.carNumbers.length < 1) {
+        Alert.alert('필수 정보가 누락되었어요', '이전 단계 입력을 확인해주세요.');
+        return;
+      }
+      setSubmitting(true);
+      try {
+        const res = await createSeatRequest({
+          trainId: state.trainId,
+          getOffStationId: state.stationId,
+          carriages: state.carNumbers,
+        });
+        setRequestId(res.id!);
+        router.replace('/seat-seekers' as any);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          Alert.alert('등록 실패', err.message);
+        } else {
+          throw err;
+        }
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       router.push('/(onboarding)/select-seat' as any);
     }
@@ -64,7 +88,7 @@ export default function SelectCarScreen() {
       </View>
 
       <BottomButtonArea>
-        <Button label="다음" onPress={handleNext} disabled={state.carNumbers.length === 0} />
+        <Button label="다음" onPress={handleNext} disabled={submitting || state.carNumbers.length === 0} />
       </BottomButtonArea>
 
       <BottomSheet open={helpOpen} onClose={() => setHelpOpen(false)} showHandle={false}>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TopBar } from '../../src/components/ui/TopBar';
@@ -7,16 +7,51 @@ import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { Button, BottomButtonArea } from '../../src/components/ui/Button';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
+import { SEAT_ZONE_TO_POSITION } from '../../src/constants/seatZone';
+import { createSeatShare } from '../../src/api/generated';
+import { ApiError } from '../../src/api/client';
 
 export default function AppearanceScreen() {
   const router = useRouter();
-  const { state, setAppearance } = useJourney();
+  const { state, setAppearance, setShareId } = useJourney();
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleDone = () => {
-    if (state.role === 'getting-off') {
-      router.push('/getting-off-status' as any);
-    } else {
+  const handleDone = async () => {
+    if (state.role !== 'getting-off') {
       router.push('/seat-seekers' as any);
+      return;
+    }
+
+    if (
+      !state.trainId ||
+      !state.stationId ||
+      state.carNumbers.length < 1 ||
+      !state.seatZone ||
+      state.appearance.trim().length < 1
+    ) {
+      Alert.alert('필수 정보가 누락되었어요', '이전 단계 입력을 확인해주세요.');
+      return;
+    }
+
+    const seatPosition = SEAT_ZONE_TO_POSITION[state.seatZone!];
+
+    try {
+      setSubmitting(true);
+      const res = await createSeatShare({
+        trainId: state.trainId!,
+        getOffStationId: state.stationId!,
+        carriages: state.carNumbers,
+        seatPosition,
+        appearance: state.appearance.trim(),
+      });
+      setShareId(res.id!);
+      router.replace('/getting-off-status' as any);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        Alert.alert('등록 실패', err.message);
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -51,7 +86,7 @@ export default function AppearanceScreen() {
         </View>
 
         <BottomButtonArea>
-          <Button label="하차 정보를 공유할게요" onPress={handleDone} />
+          <Button label="하차 정보를 공유할게요" onPress={handleDone} disabled={submitting} />
         </BottomButtonArea>
       </KeyboardAvoidingView>
     </SafeAreaView>

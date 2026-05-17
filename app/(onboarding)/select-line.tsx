@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TopBar } from '../../src/components/ui/TopBar';
@@ -8,15 +8,12 @@ import { Button } from '../../src/components/ui/Button';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
-import { LINE_2_ID } from '../../src/constants/subway';
+import { LINE_2_ID, STATION_BY_NAME, STATION_BY_ID } from '../../src/constants/subway';
+import { getTrainsByStation, GetTrainsByStationResponse } from '../../src/api/generated';
+import { ApiError } from '../../src/api/client';
 import Line2Svg from '../../assets/icons/line_2.svg';
 
-type TrainOption = { id: string; label: string; sub: string };
-const TRAIN_OPTIONS: TrainOption[] = [
-  { id: 'prev-depart', label: '전역 출발', sub: '08:00 도착 예정' },
-  { id: 'approaching', label: '당역 접근', sub: '07:58 도착' },
-  { id: 'arrived', label: '당역 도착', sub: '07:55 도착' },
-];
+type Train = NonNullable<GetTrainsByStationResponse['trains']>[number];
 
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
 const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
@@ -81,14 +78,39 @@ const HIT_H = 50;
 
 export default function SelectLineScreen() {
   const router = useRouter();
-  const { state, setLine } = useJourney();
+  const { state, setLine, setTrainId } = useJourney();
   const [contentHeight, setContentHeight] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [selectedTrain, setSelectedTrain] = useState<string>('arrived');
+  const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
   const [tappedStation, setTappedStation] = useState<string | null>(null);
+  const [trains, setTrains] = useState<Train[]>([]);
+  const [loadingTrains, setLoadingTrains] = useState(false);
+
+  const handleStationTap = async (name: string) => {
+    const station = STATION_BY_NAME[name];
+    setTappedStation(name);
+    setSelectedTrain(null);
+    setTrains([]);
+    setSheetOpen(true);
+    if (!station) return;
+    setLoadingTrains(true);
+    try {
+      const res = await getTrainsByStation(station.id);
+      setTrains(res.trains ?? []);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        Alert.alert('열차 정보를 불러오지 못했어요', err.message);
+      }
+      setSheetOpen(false);
+    } finally {
+      setLoadingTrains(false);
+    }
+  };
 
   const handleNext = () => {
+    if (!selectedTrain) return;
     setLine(LINE_2_ID);
+    setTrainId(selectedTrain);
     setSheetOpen(false);
     router.push('/(onboarding)/select-station' as any);
   };
@@ -132,10 +154,7 @@ export default function SelectLineScreen() {
                   return (
                     <Pressable
                       key={i}
-                      onPress={() => {
-                        setTappedStation(s.name);
-                        setSheetOpen(true);
-                      }}
+                      onPress={() => handleStationTap(s.name)}
                       style={{ position: 'absolute', left: x, top: y, width: HIT_W, height: HIT_H }}
                     />
                   );
@@ -157,66 +176,76 @@ export default function SelectLineScreen() {
         </Text>
 
         <View style={{ gap: 10, marginBottom: 24 }}>
-          {TRAIN_OPTIONS.map((opt) => {
-            const selected = selectedTrain === opt.id;
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                activeOpacity={0.8}
-                onPress={() => setSelectedTrain(opt.id)}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: selected ? colors.accent.blue : 'transparent',
-                  backgroundColor: colors.surface.input,
-                }}
-              >
-                <View
+          {loadingTrains ? (
+            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+              <ActivityIndicator color={colors.accent.blue} />
+            </View>
+          ) : (
+            trains.map((train) => {
+              const trainId = train.id ?? '';
+              const selected = selectedTrain === trainId;
+              const currentStationName = train.currentStationId
+                ? STATION_BY_ID[train.currentStationId]?.name
+                : undefined;
+              return (
+                <TouchableOpacity
+                  key={trainId}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedTrain(trainId)}
                   style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1.5,
-                    borderColor: selected ? colors.accent.blue : colors.fg.muted,
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12,
+                    paddingHorizontal: 16,
+                    paddingVertical: 16,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: selected ? colors.accent.blue : 'transparent',
+                    backgroundColor: colors.surface.input,
                   }}
                 >
-                  {selected && (
-                    <View
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 5,
-                        backgroundColor: colors.accent.blue,
-                      }}
-                    />
-                  )}
-                </View>
-                <Text
-                  style={{
-                    color: colors.fg.DEFAULT,
-                    fontSize: 15,
-                    fontWeight: '600',
-                    marginRight: 8,
-                  }}
-                >
-                  {opt.label}
-                </Text>
-                <Text style={{ color: colors.fg.secondary, fontSize: 13 }}>
-                  {opt.sub}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <View
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      borderWidth: 1.5,
+                      borderColor: selected ? colors.accent.blue : colors.fg.muted,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12,
+                    }}
+                  >
+                    {selected && (
+                      <View
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: colors.accent.blue,
+                        }}
+                      />
+                    )}
+                  </View>
+                  <Text
+                    style={{
+                      color: colors.fg.DEFAULT,
+                      fontSize: 15,
+                      fontWeight: '600',
+                      marginRight: 8,
+                    }}
+                  >
+                    {train.trainNo}열차
+                  </Text>
+                  <Text style={{ color: colors.fg.secondary, fontSize: 13 }}>
+                    {currentStationName ?? '정보 없음'} 부근
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
 
-        <Button label="다음" onPress={handleNext} />
+        <Button label="다음" onPress={handleNext} disabled={!selectedTrain} />
       </BottomSheet>
     </SafeAreaView>
   );

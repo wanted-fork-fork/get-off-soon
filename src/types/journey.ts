@@ -10,10 +10,14 @@ export interface Station {
 export interface JourneyState {
   role: Role | null;
   lineId: string | null;
-  stationId: string | null;
+  trainId: string | null;        // 서버 trainId (운행 열차)
+  stationId: string | null;      // 하차역 서버 stationId
   carNumbers: number[];
   seatZone: string | null;
   appearance: string;
+  // 서버 등록 후 보관 (early-exit / cancel용)
+  shareId: string | null;        // getting-off 플로우
+  requestId: string | null;      // want-seat 플로우
 }
 
 export interface Person {

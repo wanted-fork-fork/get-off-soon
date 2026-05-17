@@ -1,12 +1,14 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useJourney } from '../src/context/JourneyContext';
 import { colors } from '../src/constants/theme';
-import { getSeatZoneLabel } from '../src/constants/seatZone';
-import { STATION_BY_ID } from '../src/constants/subway';
+import { getSeatZoneLabel, SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
+import { STATION_BY_ID, LINE_2_STATIONS } from '../src/constants/subway';
 import { Button } from '../src/components/ui/Button';
+import { getMySeatShare, earlyExitSeatShare } from '../src/api/generated';
+import { ApiError } from '../src/api/client';
 import CallIcon from '../assets/icons/Call.svg';
 import EmailIcon from '../assets/icons/Email.svg';
 import TrainIcon from '../assets/icons/Train.svg';
@@ -22,7 +24,38 @@ function EditButton({ onPress }: { onPress?: () => void }) {
 
 export default function GettingOffStatusScreen() {
   const router = useRouter();
-  const { state } = useJourney();
+  const { state, setTrainId, setStation, toggleCar, setSeatZone, setAppearance, setShareId, reset } = useJourney();
+  const [ending, setEnding] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getMySeatShare();
+        if (!res) return;
+        setShareId(res.id!);
+        if (!state.trainId && res.trainId) {
+          setTrainId(res.trainId);
+        }
+        if (!state.stationId && res.getOffStationName) {
+          const found = LINE_2_STATIONS.find((s) => s.name === res.getOffStationName);
+          if (found) setStation(found.id);
+        }
+        if (state.carNumbers.length === 0 && res.carriages) {
+          for (const n of res.carriages) {
+            toggleCar(n);
+          }
+        }
+        if (!state.seatZone && typeof res.seatPosition === 'number') {
+          setSeatZone(SEAT_POSITION_TO_ZONE[res.seatPosition]);
+        }
+        if (!state.appearance && res.appearance) {
+          setAppearance(res.appearance);
+        }
+      } catch (err) {
+        if (err instanceof ApiError) return;
+      }
+    })();
+  }, []);
 
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -33,8 +66,24 @@ export default function GettingOffStatusScreen() {
 
   const stationName = state.stationId ? STATION_BY_ID[state.stationId]?.name : null;
 
-  const handleEnd = () => {
-    router.push('/journey-end' as any);
+  const handleEnd = async () => {
+    if (ending) return;
+    if (state.shareId) {
+      setEnding(true);
+      try {
+        await earlyExitSeatShare(state.shareId);
+        reset();
+        router.replace('/journey-end' as any);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          Alert.alert('처리 실패', err.message);
+        }
+      } finally {
+        setEnding(false);
+      }
+    } else {
+      router.replace('/journey-end' as any);
+    }
   };
 
   return (
@@ -138,7 +187,8 @@ export default function GettingOffStatusScreen() {
       <View style={{ backgroundColor: '#1B1D22', paddingHorizontal: 16, paddingBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2E3138' }}>
         <TouchableOpacity
           onPress={handleEnd}
-          style={{ borderRadius: 12, borderWidth: 1, borderColor: '#0095F8', height: 48, alignItems: 'center', justifyContent: 'center' }}
+          disabled={ending}
+          style={{ borderRadius: 12, borderWidth: 1, borderColor: '#0095F8', height: 48, alignItems: 'center', justifyContent: 'center', opacity: ending ? 0.5 : 1 }}
         >
           <Text style={{ color: '#0095F8', fontSize: 16, fontWeight: '400' }}>먼저 내렸어요</Text>
         </TouchableOpacity>
