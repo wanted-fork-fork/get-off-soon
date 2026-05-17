@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useJourney } from '../src/context/JourneyContext';
@@ -172,20 +172,28 @@ export default function GettingOffStatusScreen() {
           </Text>
 
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL('tel:1577-1234')}
+              style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+            >
               <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>범죄 및 위급상황</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <CallIcon width={16} height={16} />
-                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>00-000-0000</Text>
+                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>1577-1234</Text>
               </View>
-            </View>
-            <View style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL('sms:1577-1234')}
+              style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+            >
               <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>기타 민원</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <EmailIcon width={16} height={16} />
-                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>00-000-0000</Text>
+                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>1577-1234</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
