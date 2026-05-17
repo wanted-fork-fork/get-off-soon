@@ -8,6 +8,7 @@ import { Button } from '../../src/components/ui/Button';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
+import { LINE_2_ID } from '../../src/constants/subway';
 import Line2Svg from '../../assets/icons/line_2.svg';
 
 type TrainOption = { id: string; label: string; sub: string };
@@ -80,13 +81,14 @@ const HIT_H = 50;
 
 export default function SelectLineScreen() {
   const router = useRouter();
-  const { state } = useJourney();
+  const { state, setLine } = useJourney();
   const [contentHeight, setContentHeight] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [selectedTrain, setSelectedTrain] = useState<string>('arrived');
   const [tappedStation, setTappedStation] = useState<string | null>(null);
 
   const handleNext = () => {
+    setLine(LINE_2_ID);
     setSheetOpen(false);
     router.push('/(onboarding)/select-station' as any);
   };

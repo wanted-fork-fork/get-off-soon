@@ -6,6 +6,7 @@ import { TopBar } from '../../src/components/ui/TopBar';
 import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
+import { STATION_BY_NAME } from '../../src/constants/subway';
 import Line2Svg from '../../assets/icons/line_2.svg';
 
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
@@ -87,7 +88,9 @@ export default function SelectStationScreen() {
 
   const handleConfirm = () => {
     if (!tapped) return;
-    setStation(tapped.name);
+    const station = STATION_BY_NAME[tapped.name];
+    if (!station) return;
+    setStation(station.id);
     router.push('/(onboarding)/select-car' as any);
   };
 

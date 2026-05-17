@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { Button, BottomButtonArea } from '../src/components/ui/Button';
 import { useJourney } from '../src/context/JourneyContext';
+import { STATION_BY_ID } from '../src/constants/subway';
 import TrainIcon from '../assets/icons/Train.svg';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -70,8 +71,8 @@ export default function JourneyEndScreen() {
             내 이동 정보
           </Text>
           <View style={{ borderRadius: 12, backgroundColor: '#262A30', padding: 16, gap: 24, marginBottom: 24 }}>
-            <InfoRow label="승차 위치" value={<LineBadge name={state.stationId ?? '서울대입구'} />} />
-            <InfoRow label="하차 위치" value={<LineBadge name={state.stationId ?? '선릉'} />} />
+            <InfoRow label="승차 위치" value={<LineBadge name="서울대입구" />} />
+            <InfoRow label="하차 위치" value={<LineBadge name={(state.stationId && STATION_BY_ID[state.stationId]?.name) ?? '선릉'} />} />
             <InfoRow label="하차 시간" value={dateStr} />
           </View>
 

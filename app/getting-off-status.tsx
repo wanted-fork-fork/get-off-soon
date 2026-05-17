@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useJourney } from '../src/context/JourneyContext';
 import { colors } from '../src/constants/theme';
 import { getSeatZoneLabel } from '../src/constants/seatZone';
+import { STATION_BY_ID } from '../src/constants/subway';
 import { Button } from '../src/components/ui/Button';
 import CallIcon from '../assets/icons/Call.svg';
 import EmailIcon from '../assets/icons/Email.svg';
@@ -29,6 +30,8 @@ export default function GettingOffStatusScreen() {
   const carLabel = state.carNumbers.length > 0
     ? state.carNumbers.join('·') + '호차'
     : '미선택';
+
+  const stationName = state.stationId ? STATION_BY_ID[state.stationId]?.name : null;
 
   const handleEnd = () => {
     router.push('/journey-end' as any);
@@ -63,13 +66,13 @@ export default function GettingOffStatusScreen() {
             <View style={{ position: 'absolute', left: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginLeft: -34 }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#13A51D', backgroundColor: colors.surface.DEFAULT }} />
               <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-                {state.stationId ?? '출발역'}
+                {stationName ?? '출발역'}
               </Text>
             </View>
             <View style={{ position: 'absolute', right: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginRight: -34 }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#CC4B2B', backgroundColor: colors.surface.DEFAULT }} />
               <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-                {state.stationId ?? '도착역'}
+                {stationName ?? '도착역'}
               </Text>
             </View>
           </View>

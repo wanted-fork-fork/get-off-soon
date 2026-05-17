@@ -1,9 +1,10 @@
 export type Role = 'getting-off' | 'want-seat';
 
 export interface Station {
-  id: string;
-  name: string;
-  order: number;
+  id: string;       // 서버 stationId (예: '1002000211')
+  name: string;     // 한글 이름 (예: '성수')
+  order: number;    // stationOrder (서버 기준)
+  lineId: string;   // 서버 lineId (예: '1002')
 }
 
 export interface JourneyState {
