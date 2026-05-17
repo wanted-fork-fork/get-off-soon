@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useJourney } from '../src/context/JourneyContext';
 import { colors } from '../src/constants/theme';
 import { getSeatZoneLabel, SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
@@ -24,6 +24,7 @@ function EditButton({ onPress }: { onPress?: () => void }) {
 
 export default function GettingOffStatusScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { state, setTrainId, setStation, toggleCar, setSeatZone, setAppearance, setShareId, reset } = useJourney();
   const [ending, setEnding] = useState(false);
 
@@ -88,13 +89,18 @@ export default function GettingOffStatusScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#262A30' }} edges={['top']}>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 12 }}>
-          <TouchableOpacity onPress={handleEnd} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 24 }}>✕</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, paddingTop: 12 }}>
+        <TouchableOpacity onPress={handleEnd} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 24 }}>✕</Text>
+        </TouchableOpacity>
+      </View>
 
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        bounces={false}
+        overScrollMode="never"
+      >
         <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
           <Text style={{ color: colors.fg.DEFAULT, fontSize: 28, fontWeight: '700', marginBottom: 8 }}>
             {timeStr} 하차 예정
@@ -184,7 +190,7 @@ export default function GettingOffStatusScreen() {
         </View>
       </ScrollView>
 
-      <View style={{ backgroundColor: '#1B1D22', paddingHorizontal: 16, paddingBottom: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2E3138' }}>
+      <View style={{ backgroundColor: '#1B1D22', paddingHorizontal: 16, paddingBottom: insets.bottom + 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2E3138' }}>
         <TouchableOpacity
           onPress={handleEnd}
           disabled={ending}
