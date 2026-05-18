@@ -147,7 +147,7 @@ export default function GettingOffStatusScreen() {
       {/* 헤더 콘텐츠 - absolute, ScrollView 뒤에 그려짐 */}
       <View style={{ position: 'absolute', top: insets.top, left: 0, right: 0, height: HEADER_HEIGHT }}>
         <View style={{ height: 64 }} />
-        <View style={{ paddingHorizontal: 24, paddingTop: 8 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           <Text style={{ color: colors.fg.DEFAULT, fontSize: 28, fontWeight: '700', marginBottom: 8 }}>
             {timeStr} 하차 예정
           </Text>
@@ -193,7 +193,7 @@ export default function GettingOffStatusScreen() {
             backgroundColor: '#1B1D22',
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
-            paddingHorizontal: 24,
+            paddingHorizontal: 16,
             paddingTop: 28,
             paddingBottom: 24,
             minHeight: sheetMinHeight,
@@ -241,24 +241,18 @@ export default function GettingOffStatusScreen() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => Linking.openURL('tel:1577-1234')}
-              style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16 }}
             >
-              <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>범죄 및 위급상황</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <CallIcon width={16} height={16} />
-                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>1577-1234</Text>
-              </View>
+              <CallIcon width={20} height={20} />
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>전화로 신고하기</Text>
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => Linking.openURL('sms:1577-1234')}
-              style={{ flex: 1, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14 }}
+              style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16 }}
             >
-              <Text style={{ color: colors.fg.muted, fontSize: 12, marginBottom: 6 }}>기타 민원</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <EmailIcon width={16} height={16} />
-                <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>1577-1234</Text>
-              </View>
+              <EmailIcon width={20} height={20} />
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>문자로 신고하기</Text>
             </TouchableOpacity>
           </View>
         </View>
