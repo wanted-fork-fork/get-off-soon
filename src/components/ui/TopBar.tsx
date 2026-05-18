@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '../../constants/theme';
 import ArrowLeftIcon from '../../../assets/icons/ArrowLeft.svg';
 
@@ -11,6 +12,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarProps) {
+  const router = useRouter();
   return (
     <View
       style={{ backgroundColor: colors.surface.DEFAULT, paddingHorizontal: 16, height: 59, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
@@ -45,7 +47,7 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
               알림
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/mypage' as any)}>
             <Text
               style={{
                 color: colors.fg.DEFAULT,
