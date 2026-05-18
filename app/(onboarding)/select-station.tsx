@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TopBar } from '../../src/components/ui/TopBar';
-import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
 import { STATION_BY_NAME } from '../../src/constants/subway';
@@ -76,11 +73,9 @@ const TOOLTIP_GAP = 10;
 
 export default function SelectStationScreen() {
   const router = useRouter();
-  const { state, setStation } = useJourney();
+  const { setStation } = useJourney();
   const [contentHeight, setContentHeight] = useState(0);
   const [tappedIndex, setTappedIndex] = useState<number | null>(null);
-
-  const totalSteps = state.role === 'getting-off' ? 5 : 3;
 
   const svgWidth = contentHeight * SVG_ASPECT;
   const scale = contentHeight > 0 ? contentHeight / SVG_VIEWBOX.h : 0;
@@ -95,10 +90,7 @@ export default function SelectStationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} title="여정 선택" />
-      <ProgressBar current={2} total={totalSteps} />
-
+    <View style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 16 }}>
         <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600' }}>
           하차 예정인 역을 선택해주세요.
@@ -190,6 +182,6 @@ export default function SelectStationScreen() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

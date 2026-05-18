@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TopBar } from '../../src/components/ui/TopBar';
-import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { Button } from '../../src/components/ui/Button';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
 import { useJourney } from '../../src/context/JourneyContext';
@@ -25,6 +22,10 @@ const TRAIN_STATUS_LABEL: Record<number, string> = {
   5: '전역 도착',
   99: '운행중',
 };
+
+// 같은 역을 짧은 시간에 다시 탭해도 다시 호출하지 않도록 모듈 레벨 캐시 (1분 TTL)
+const TRAINS_CACHE_TTL_MS = 60_000;
+const trainsByStationCache = new Map<string, { trains: Train[]; ts: number }>();
 
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
 const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
@@ -101,13 +102,26 @@ export default function SelectLineScreen() {
     const station = STATION_BY_NAME[name];
     setTappedStation(name);
     setSelectedTrain(null);
-    setTrains([]);
     setSheetOpen(true);
-    if (!station) return;
+    if (!station) {
+      setTrains([]);
+      return;
+    }
+
+    const cached = trainsByStationCache.get(station.id);
+    if (cached && Date.now() - cached.ts < TRAINS_CACHE_TTL_MS) {
+      setTrains(cached.trains);
+      setLoadingTrains(false);
+      return;
+    }
+
+    setTrains([]);
     setLoadingTrains(true);
     try {
       const res = await getTrainsByStation(station.id);
-      setTrains(res.trains ?? []);
+      const trains = res.trains ?? [];
+      trainsByStationCache.set(station.id, { trains, ts: Date.now() });
+      setTrains(trains);
     } catch (err) {
       if (err instanceof ApiError) {
         Alert.alert('열차 정보를 불러오지 못했어요', err.message);
@@ -126,15 +140,10 @@ export default function SelectLineScreen() {
     router.push('/(onboarding)/select-station' as any);
   };
 
-  const totalSteps = state.role === 'getting-off' ? 5 : 3;
-
   const svgWidth = contentHeight * SVG_ASPECT;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} title="여정 선택" />
-      <ProgressBar current={1} total={totalSteps} />
-
+    <View style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }}>
       <View style={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 16 }}>
         <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600' }}>
           현재 타고 있는 열차를 선택해주세요.
@@ -177,22 +186,30 @@ export default function SelectLineScreen() {
       </View>
 
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
-        {tappedStation && (
-          <Text style={{ color: colors.accent.link, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
-            {tappedStation}
-          </Text>
-        )}
-        <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, lineHeight: 22, marginBottom: 20 }}>
-          아래 목록에서 탑승하고 있거나{'\n'}탑승 예정인 열차를 선택해주세요.
-        </Text>
+        {loadingTrains ? (
+          <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+            <ActivityIndicator color={colors.accent.blue} />
+          </View>
+        ) : trains.length === 0 ? (
+          <View>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, lineHeight: 22, marginBottom: 24 }}>
+              도착 예정이거나 도착한 열차가 없습니다.{'\n'}열차가 역에 있을 때 다시 시도해주세요.
+            </Text>
+            <Button label="닫기" onPress={() => setSheetOpen(false)} />
+          </View>
+        ) : (
+          <>
+            {tappedStation && (
+              <Text style={{ color: colors.accent.link, fontSize: 14, fontWeight: '600', marginBottom: 8 }}>
+                {tappedStation}
+              </Text>
+            )}
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, lineHeight: 22, marginBottom: 20 }}>
+              아래 목록에서 탑승하고 있거나{'\n'}탑승 예정인 열차를 선택해주세요.
+            </Text>
 
-        <View style={{ gap: 10, marginBottom: 24 }}>
-          {loadingTrains ? (
-            <View style={{ paddingVertical: 32, alignItems: 'center' }}>
-              <ActivityIndicator color={colors.accent.blue} />
-            </View>
-          ) : (
-            trains.map((train) => {
+            <View style={{ gap: 10, marginBottom: 24 }}>
+              {trains.map((train) => {
               const trainId = train.id ?? '';
               const selected = selectedTrain === trainId;
               const currentStationName = train.currentStationId
@@ -254,12 +271,13 @@ export default function SelectLineScreen() {
                   </Text>
                 </TouchableOpacity>
               );
-            })
-          )}
-        </View>
+            })}
+            </View>
 
-        <Button label="다음" onPress={handleNext} disabled={!selectedTrain} />
+            <Button label="다음" onPress={handleNext} disabled={!selectedTrain} />
+          </>
+        )}
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }

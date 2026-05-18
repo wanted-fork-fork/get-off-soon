@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TopBar } from '../../src/components/ui/TopBar';
-import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { CarGrid } from '../../src/components/ui/CarGrid';
 import { Button, BottomButtonArea } from '../../src/components/ui/Button';
 import { BottomSheet } from '../../src/components/ui/BottomSheet';
@@ -19,7 +16,6 @@ export default function SelectCarScreen() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const totalSteps = state.role === 'getting-off' ? 5 : 3;
   const isLastStep = state.role === 'want-seat';
 
   const handleNext = async () => {
@@ -53,10 +49,7 @@ export default function SelectCarScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} title="자리 정보" />
-      <ProgressBar current={3} total={totalSteps} />
-
+    <View style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }}>
       <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 32 }}>
         <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', marginBottom: 4 }}>
           현재 탑승칸 위치를 선택해주세요.
@@ -115,6 +108,6 @@ export default function SelectCarScreen() {
         </Text>
         <Button label="확인했어요" onPress={() => setHelpOpen(false)} />
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }

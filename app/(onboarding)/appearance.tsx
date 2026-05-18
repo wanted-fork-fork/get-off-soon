@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TopBar } from '../../src/components/ui/TopBar';
-import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { Button, BottomButtonArea } from '../../src/components/ui/Button';
 import { useJourney } from '../../src/context/JourneyContext';
 import { colors } from '../../src/constants/theme';
@@ -56,10 +53,7 @@ export default function AppearanceScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} title="인상착의" />
-      <ProgressBar current={5} total={5} />
-
+    <View style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -89,6 +83,6 @@ export default function AppearanceScreen() {
           <Button label="하차 정보를 공유할게요" onPress={handleDone} disabled={submitting} />
         </BottomButtonArea>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
