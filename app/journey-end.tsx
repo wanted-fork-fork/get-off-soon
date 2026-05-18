@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, ScrollView, Animated } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { Button, BottomButtonArea } from '../src/components/ui/Button';
@@ -31,6 +31,9 @@ function LineBadge({ name }: { name: string }) {
 export default function JourneyEndScreen() {
   const router = useRouter();
   const { state, reset } = useJourney();
+  const params = useLocalSearchParams<{ endedBoard?: string; endedGetOff?: string }>();
+  const endedBoard = typeof params.endedBoard === 'string' ? params.endedBoard : '';
+  const endedGetOff = typeof params.endedGetOff === 'string' ? params.endedGetOff : '';
 
   const trainX = useRef(new Animated.Value(-200)).current;
   const titleOpacity = useRef(new Animated.Value(0)).current;
@@ -50,7 +53,10 @@ export default function JourneyEndScreen() {
 
   const handleHome = () => {
     reset();
-    router.replace('/');
+    router.replace({
+      pathname: '/',
+      params: { endedBoard, endedGetOff },
+    } as any);
   };
 
   return (

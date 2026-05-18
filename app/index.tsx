@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
@@ -14,6 +14,9 @@ import { SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
 
 type ActiveShare = NonNullable<GetMySeatShareResponse>;
 type ActiveRequest = GetMySeatRequestResponse;
+
+// cold start 시 1회만 자동 라우팅. 이후 사용자가 홈으로 돌아오면 끌고가지 않음.
+let didAutoRedirect = false;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -34,6 +37,18 @@ export default function HomeScreen() {
   const [activeShare, setActiveShare] = useState<ActiveShare | null>(null);
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
   const [loadingActive, setLoadingActive] = useState(true);
+
+  const params = useLocalSearchParams<{ endedBoard?: string; endedGetOff?: string }>();
+  const [endedBanner, setEndedBanner] = useState<{ board: string; getOff: string } | null>(null);
+
+  useEffect(() => {
+    const board = typeof params.endedBoard === 'string' ? params.endedBoard : '';
+    const getOff = typeof params.endedGetOff === 'string' ? params.endedGetOff : '';
+    if (board || getOff) {
+      setEndedBanner({ board, getOff });
+      router.setParams({ endedBoard: undefined, endedGetOff: undefined } as any);
+    }
+  }, [params.endedBoard, params.endedGetOff]);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +74,11 @@ export default function HomeScreen() {
             if (zone) setSeatZone(zone);
           }
           if (shareRes.appearance) setAppearance(shareRes.appearance);
+          if (!didAutoRedirect) {
+            didAutoRedirect = true;
+            router.replace('/getting-off-status' as any);
+            return;
+          }
         } else if (requestRes && requestRes.id) {
           setActiveRequest(requestRes);
           setRole('want-seat');
@@ -69,6 +89,11 @@ export default function HomeScreen() {
           if (found) setStation(found.id);
           if (state.carNumbers.length === 0 && requestRes.carriages) {
             requestRes.carriages.forEach((n) => toggleCar(n));
+          }
+          if (!didAutoRedirect) {
+            didAutoRedirect = true;
+            router.replace('/seat-seekers' as any);
+            return;
           }
         }
       } catch (e) {
@@ -151,6 +176,33 @@ export default function HomeScreen() {
             </Text>
             <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
               착석 희망 중
+            </Text>
+          </View>
+          <Image
+            source={require('../assets/images/shoes.png')}
+            style={{ width: 56, height: 56 }}
+            resizeMode="contain"
+          />
+        </Pressable>
+      );
+    }
+
+    if (endedBanner) {
+      const { board, getOff } = endedBanner;
+      const top = board && getOff ? `${board} → ${getOff}` : board || getOff;
+      return (
+        <Pressable
+          onPress={() => setEndedBanner(null)}
+          style={pillBaseStyle}
+        >
+          <View style={{ flex: 1 }}>
+            {top ? (
+              <Text style={{ color: '#7BA7FF', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+                {top}
+              </Text>
+            ) : null}
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
+              여정을 종료했습니다.
             </Text>
           </View>
           <Image

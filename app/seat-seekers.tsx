@@ -39,11 +39,7 @@ export default function SeatSeekersScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const [reqRes, sharesRes] = await Promise.all([
-          getMySeatRequest(),
-          getSharesForMyRequest({}),
-        ]);
-
+        const reqRes = await getMySeatRequest();
         if (reqRes && reqRes.id) {
           setRequestId(reqRes.id);
           if (!state.trainId && reqRes.trainId) {
@@ -56,8 +52,26 @@ export default function SeatSeekersScreen() {
           if (state.carNumbers.length === 0 && reqRes.carriages) {
             for (const c of reqRes.carriages) toggleCar(c);
           }
+          if (filterCar == null && reqRes.carriages?.length) {
+            setFilterCar(reqRes.carriages[0]!);
+          }
         }
+      } catch (err) {
+        if (err instanceof ApiError) return;
+        throw err;
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  useEffect(() => {
+    if (filterCar == null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const sharesRes = await getSharesForMyRequest({ carriage: filterCar });
+        console.log('[getSharesForMyRequest] carriage=', filterCar, sharesRes);
+        if (cancelled) return;
         const flat: Share[] = [];
         for (const c of sharesRes.carriages ?? []) {
           for (const s of c.shares ?? []) {
@@ -78,14 +92,14 @@ export default function SeatSeekersScreen() {
         throw err;
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [filterCar]);
 
   const station = LINE_2_STATIONS.find(s => s.id === state.stationId);
 
-  const filteredShares = shares
-    .filter(s => filterCar == null || s.carriage === filterCar)
-    .sort((a, b) => a.stopsAway - b.stopsAway);
+  const sortedShares = [...shares].sort((a, b) => a.stopsAway - b.stopsAway);
 
   const handleToggleCar = (car: number) => {
     setFilterCar(car);
@@ -115,12 +129,16 @@ export default function SeatSeekersScreen() {
 
   const handleEnd = async () => {
     if (ending) return;
+    const endParams = {
+      endedBoard: '좌석',
+      endedGetOff: station?.name ?? '',
+    };
     if (state.requestId) {
       setEnding(true);
       try {
         await earlyExitSeatRequest(state.requestId);
         reset();
-        router.replace('/journey-end' as any);
+        router.replace({ pathname: '/journey-end', params: endParams } as any);
       } catch (err) {
         if (err instanceof ApiError) {
           Alert.alert('처리 실패', err.message);
@@ -132,7 +150,7 @@ export default function SeatSeekersScreen() {
       }
       return;
     }
-    router.replace('/journey-end' as any);
+    router.replace({ pathname: '/journey-end', params: endParams } as any);
   };
 
   return (
@@ -154,14 +172,14 @@ export default function SeatSeekersScreen() {
       </View>
 
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ gap: 12, paddingBottom: 16 }}>
-        {filteredShares.length === 0 ? (
+        {sortedShares.length === 0 ? (
           <View style={{ alignItems: 'center', paddingTop: 64 }}>
             <Text style={{ color: colors.fg.muted, fontSize: 16 }}>
               해당 칸에 하차 예정자가 없어요
             </Text>
           </View>
         ) : (
-          filteredShares.map(share => {
+          sortedShares.map(share => {
             const isExpanded = expandedId === share.id;
             const detail = viewedDetails[share.id];
             const stopsLabel = share.stopsAway === 1 ? '다음 역 하차' : `${share.stopsAway}정거장 뒤`;
