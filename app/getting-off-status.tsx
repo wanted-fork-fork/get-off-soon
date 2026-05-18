@@ -119,6 +119,33 @@ export default function GettingOffStatusScreen() {
   const getOffName = getOffStation?.name ?? '도착역';
   const progressPctLabel: `${number}%` = `${Math.round(progressPct * 100)}%`;
 
+  // 공유 상태 폴링 - 완료되면 자동으로 journey-end로 이동
+  useEffect(() => {
+    if (!state.shareId) return;
+    let cancelled = false;
+    const checkShare = async () => {
+      try {
+        const res = await getMySeatShare();
+        if (cancelled) return;
+        const isDone = !res || (res.status != null && res.status !== 'ACTIVE');
+        if (isDone) {
+          reset();
+          router.replace({
+            pathname: '/journey-end',
+            params: { endedBoard: boardName, endedGetOff: getOffName },
+          } as any);
+        }
+      } catch (err) {
+        if (err instanceof ApiError) return;
+      }
+    };
+    const id = setInterval(checkShare, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [state.shareId, boardName, getOffName]);
+
   const handleEnd = async () => {
     if (ending) return;
     const endParams = { endedBoard: boardName, endedGetOff: getOffName };
