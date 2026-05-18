@@ -244,7 +244,7 @@ export default function GettingOffStatusScreen() {
               style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16 }}
             >
               <CallIcon width={20} height={20} />
-              <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>전화로 신고하기</Text>
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500', lineHeight: 15, letterSpacing: 15 * -0.015 }}>전화로 신고하기</Text>
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -252,7 +252,7 @@ export default function GettingOffStatusScreen() {
               style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16 }}
             >
               <EmailIcon width={20} height={20} />
-              <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '500' }}>문자로 신고하기</Text>
+              <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500', lineHeight: 15, letterSpacing: 15 * -0.015 }}>문자로 신고하기</Text>
             </TouchableOpacity>
           </View>
         </View>
