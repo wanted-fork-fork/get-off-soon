@@ -52,7 +52,11 @@ export default function RootLayout() {
             contentStyle: { backgroundColor: '#1B1D22' },
             animation: 'fade',
           }}
-        />
+        >
+          <Stack.Screen name="edit-car" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="edit-seat" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="edit-appearance" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        </Stack>
       </JourneyProvider>
     </SafeAreaProvider>
   );
