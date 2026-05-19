@@ -13,6 +13,20 @@ interface TopBarProps {
 
 export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarProps) {
   const router = useRouter();
+
+  const handleBack = () => {
+    if (!onBack) {
+      router.replace('/' as any);
+      return;
+    }
+    try {
+      onBack();
+    } catch (e) {
+      console.warn('[TopBar] back action failed, redirecting home', e);
+      router.replace('/' as any);
+    }
+  };
+
   return (
     <View
       style={{ backgroundColor: colors.surface.DEFAULT, paddingHorizontal: 16, height: 59, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
@@ -22,7 +36,7 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
           곧 내려요
         </Text>
       ) : (
-        <TouchableOpacity onPress={onBack} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity onPress={handleBack} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
           <ArrowLeftIcon width={24} height={24} />
         </TouchableOpacity>
       )}

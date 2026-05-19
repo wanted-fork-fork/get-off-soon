@@ -37,3 +37,10 @@ export function bootstrapAuth(): Promise<void> {
   })();
   return bootstrapPromise;
 }
+
+/** 로그아웃·탈퇴 후 토큰을 비우고 다음 bootstrap에서 dev 로그인이 다시 일어나도록 한다. */
+export async function resetAuth(): Promise<void> {
+  await asyncStorageTokenStore.clearTokens();
+  bootstrapPromise = null;
+  await bootstrapAuth();
+}
