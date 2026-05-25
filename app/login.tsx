@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
@@ -8,6 +8,39 @@ import BrandApple from '../assets/icons/BrandApple.svg';
 import BrandKakao from '../assets/icons/BrandKakao.svg';
 
 const KAKAO_YELLOW = '#FEE500';
+
+interface SocialButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  background: string;
+  textColor: string;
+  onPress: () => void;
+}
+
+function SocialButton({ icon, label, background, textColor, onPress }: SocialButtonProps) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={{
+        height: 44,
+        borderRadius: 99,
+        backgroundColor: background,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+      }}
+    >
+      <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
+        {icon}
+      </View>
+      <Text style={{ color: textColor, fontSize: 15, fontWeight: '600', letterSpacing: 15 * -0.015 }}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,155 +66,84 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <View style={styles.header}>
-        <Pressable onPress={handleClose} hitSlop={12} style={styles.closeBtn}>
-          <Text style={styles.closeIcon}>✕</Text>
-        </Pressable>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top', 'bottom']}>
+      <View style={{ height: 56, paddingHorizontal: 16, justifyContent: 'center' }}>
+        <TouchableOpacity
+          onPress={handleClose}
+          hitSlop={12}
+          style={{ width: 32, height: 32, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 22, lineHeight: 24 }}>✕</Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.hero}>
-        <Text style={styles.brand}>곧 내려요</Text>
-        <Text style={styles.tagline}>{'지하철에서 자리 눈치게임은\n이제 그만!'}</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+        <Text
+          style={{
+            fontFamily: 'Paperlogy-ExtraBold',
+            fontSize: 44,
+            color: colors.fg.DEFAULT,
+            letterSpacing: -1,
+            marginBottom: 24,
+          }}
+        >
+          곧 내려요
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: colors.fg.secondary,
+            textAlign: 'center',
+            lineHeight: 24,
+            fontWeight: '400',
+          }}
+        >
+          {'지하철에서 자리 눈치게임은\n이제 그만!'}
+        </Text>
       </View>
 
-      <View style={styles.bottom}>
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>간편 로그인</Text>
-          <View style={styles.dividerLine} />
+      <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
+          <Text
+            style={{
+              color: '#E4E5E7',
+              fontSize: 16,
+              fontWeight: '600',
+              lineHeight: 24,
+              letterSpacing: 16 * -0.015,
+              marginHorizontal: 12,
+            }}
+          >
+            간편 로그인
+          </Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: colors.divider }} />
         </View>
 
-        <Pressable
-          onPress={handleGoogle}
-          style={({ pressed }) => [
-            styles.btn,
-            styles.btnWhite,
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          <View style={styles.iconWrap}>
-            <BrandGoogle width={18} height={18} />
-          </View>
-          <Text style={styles.btnLabelDark}>Google로 시작하기</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleKakao}
-          style={({ pressed }) => [
-            styles.btn,
-            { backgroundColor: KAKAO_YELLOW },
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          <View style={styles.iconWrap}>
-            <BrandKakao width={18} height={18} />
-          </View>
-          <Text style={styles.btnLabelDark}>카카오톡으로 시작하기</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={handleApple}
-          style={({ pressed }) => [
-            styles.btn,
-            styles.btnWhite,
-            pressed && { opacity: 0.85 },
-          ]}
-        >
-          <View style={styles.iconWrap}>
-            <BrandApple width={18} height={18} />
-          </View>
-          <Text style={styles.btnLabelDark}>Apple로 계속하기</Text>
-        </Pressable>
+        <View style={{ gap: 12 }}>
+          <SocialButton
+            icon={<BrandGoogle width={18} height={18} />}
+            label="Google로 시작하기"
+            background="#FFFFFF"
+            textColor="#000000"
+            onPress={handleGoogle}
+          />
+          <SocialButton
+            icon={<BrandKakao width={18} height={18} />}
+            label="카카오톡으로 시작하기"
+            background={KAKAO_YELLOW}
+            textColor="#000000"
+            onPress={handleKakao}
+          />
+          <SocialButton
+            icon={<BrandApple width={18} height={18} />}
+            label="Apple로 계속하기"
+            background="#FFFFFF"
+            textColor="#000000"
+            onPress={handleApple}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.surface.DEFAULT,
-  },
-  header: {
-    height: 56,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeIcon: {
-    color: colors.fg.DEFAULT,
-    fontSize: 22,
-    fontWeight: '400',
-    lineHeight: 24,
-  },
-  hero: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  brand: {
-    fontFamily: 'Paperlogy-ExtraBold',
-    fontSize: 44,
-    color: colors.fg.DEFAULT,
-    letterSpacing: -1,
-    marginBottom: 24,
-  },
-  tagline: {
-    fontSize: 16,
-    color: colors.fg.secondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontWeight: '400',
-  },
-  bottom: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 10,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 14,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.divider,
-  },
-  dividerLabel: {
-    color: colors.fg.muted,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  btn: {
-    height: 52,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-  },
-  btnWhite: {
-    backgroundColor: '#FFFFFF',
-  },
-  iconWrap: {
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  btnLabelDark: {
-    color: '#000000',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-});
