@@ -13,6 +13,7 @@ const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
 
 const EXTERNAL_LINKS = {
   faq: 'https://www.notion.so/36b92f26cef7802b8e7feaf09ca2bc52',
+  inquiry: 'https://forms.gle/wJhUwM4fL9o5HdiT6',
   terms: 'https://www.notion.so/36b92f26cef7803dbc47cd6205f43fc7',
   privacy: 'https://www.notion.so/36b92f26cef780d3a5aff5e3db2982de',
   geo: 'https://www.notion.so/36b92f26cef7805dba3aecc2aecff09d',
@@ -184,7 +185,7 @@ export default function MyPageScreen() {
         <View style={{ marginBottom: 32 }}>
           <SectionTitle>고객지원</SectionTitle>
           <MenuRow icon={ICONS.faq} label="자주 묻는 질문" onPress={() => openExternalLink(EXTERNAL_LINKS.faq)} />
-          <MenuRow icon={ICONS.question} label="문의하기" />
+          <MenuRow icon={ICONS.question} label="문의하기" onPress={() => openExternalLink(EXTERNAL_LINKS.inquiry)} />
         </View>
 
         {/* 약관 및 정책 */}
