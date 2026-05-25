@@ -6,11 +6,17 @@ import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
 import { RoleCard } from '../src/components/ui/RoleCard';
-import { getMySeatShare, getMySeatRequest } from '../src/api/generated';
+import { getMySeatShare, getMySeatRequest, getMe } from '../src/api/generated';
 import type { GetMySeatShareResponse, GetMySeatRequestResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 import { LINE_2_ID, LINE_2_STATIONS } from '../src/constants/subway';
 import { SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
+
+const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
+function isSocialProvider(provider: string | undefined | null): boolean {
+  if (!provider) return false;
+  return !GUEST_PROVIDERS.has(provider.toLowerCase());
+}
 
 type ActiveShare = NonNullable<GetMySeatShareResponse>;
 type ActiveRequest = GetMySeatRequestResponse;
@@ -37,6 +43,7 @@ export default function HomeScreen() {
   const [activeShare, setActiveShare] = useState<ActiveShare | null>(null);
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
   const [loadingActive, setLoadingActive] = useState(true);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
   const params = useLocalSearchParams<{ endedBoard?: string; endedGetOff?: string }>();
   const [endedBanner, setEndedBanner] = useState<{ board: string; getOff: string } | null>(null);
@@ -49,6 +56,12 @@ export default function HomeScreen() {
       router.setParams({ endedBoard: undefined, endedGetOff: undefined } as any);
     }
   }, [params.endedBoard, params.endedGetOff]);
+
+  useEffect(() => {
+    getMe()
+      .then((me) => setLoggedIn(isSocialProvider(me.provider)))
+      .catch(() => setLoggedIn(false));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -210,6 +223,59 @@ export default function HomeScreen() {
             style={{ width: 56, height: 56 }}
             resizeMode="contain"
           />
+        </Pressable>
+      );
+    }
+
+    if (loggedIn === false) {
+      return (
+        <Pressable
+          onPress={() => router.push('/login' as any)}
+          style={{
+            position: 'absolute',
+            bottom: 40,
+            left: 16,
+            right: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#162544',
+            borderRadius: 16,
+            paddingVertical: 18,
+            paddingLeft: 24,
+            paddingRight: 16,
+            overflow: 'hidden',
+          }}
+        >
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text style={{ color: '#8AB4FF', fontSize: 13, fontWeight: '500' }}>
+              회원 가입 시 2 리워드 지급!
+            </Text>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '600' }}>
+              로그인하고 두 번 더 앉아가세요.
+            </Text>
+          </View>
+          <View style={{ alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
+            <Image
+              source={require('../assets/images/shoes.png')}
+              style={{ width: 56, height: 56 }}
+              resizeMode="contain"
+            />
+            <View
+              style={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: colors.accent.blue,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Text style={{ color: colors.white, fontSize: 14, fontWeight: '700', marginTop: -1 }}>✓</Text>
+            </View>
+          </View>
         </Pressable>
       );
     }
