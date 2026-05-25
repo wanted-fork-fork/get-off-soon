@@ -1,13 +1,35 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ImageSourcePropType, Modal, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, ImageSourcePropType, Modal, Alert, Linking } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { TopBar } from '../src/components/ui/TopBar';
-import { logout } from '../src/api/generated';
+import { getMe, logout } from '../src/api/generated';
 import { resetAuth } from '../src/api/tokenStore';
 import { ApiError } from '../src/api/client';
 import { useJourney } from '../src/context/JourneyContext';
+
+const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
+
+const EXTERNAL_LINKS = {
+  faq: 'https://www.notion.so/36b92f26cef7802b8e7feaf09ca2bc52',
+  terms: 'https://www.notion.so/36b92f26cef7803dbc47cd6205f43fc7',
+  privacy: 'https://www.notion.so/36b92f26cef780d3a5aff5e3db2982de',
+  geo: 'https://www.notion.so/36b92f26cef7805dba3aecc2aecff09d',
+} as const;
+
+async function openExternalLink(url: string) {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert('링크를 열 수 없습니다.');
+  }
+}
+
+function isSocialProvider(provider: string | undefined | null): boolean {
+  if (!provider) return false;
+  return !GUEST_PROVIDERS.has(provider.toLowerCase());
+}
 
 const ICONS = {
   rewords: require('../assets/icons/rewords.png'),
@@ -80,6 +102,30 @@ export default function MyPageScreen() {
   const { reset: resetJourney } = useJourney();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+
+  const refreshAuthStatus = React.useCallback(async () => {
+    try {
+      const me = await getMe();
+      setLoggedIn(isSocialProvider(me.provider));
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setLoggedIn(false);
+        return;
+      }
+      setLoggedIn(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAuthStatus();
+  }, [refreshAuthStatus]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshAuthStatus();
+    }, [refreshAuthStatus])
+  );
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -114,6 +160,10 @@ export default function MyPageScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
+        {loggedIn === false && (
+          <LoginBanner onPress={() => router.push('/login' as any)} />
+        )}
+
         {/* 이동 및 리워드 */}
         <View style={{ marginBottom: 32 }}>
           <SectionTitle>이동 및 리워드</SectionTitle>
@@ -133,25 +183,29 @@ export default function MyPageScreen() {
         {/* 고객지원 */}
         <View style={{ marginBottom: 32 }}>
           <SectionTitle>고객지원</SectionTitle>
-          <MenuRow icon={ICONS.faq} label="자주 묻는 질문" />
+          <MenuRow icon={ICONS.faq} label="자주 묻는 질문" onPress={() => openExternalLink(EXTERNAL_LINKS.faq)} />
           <MenuRow icon={ICONS.question} label="문의하기" />
         </View>
 
         {/* 약관 및 정책 */}
         <View style={{ marginBottom: 32 }}>
           <SectionTitle>약관 및 정책</SectionTitle>
-          <MenuRow icon={ICONS.terms} label="서비스 이용약관" />
-          <MenuRow icon={ICONS.terms} label="개인정보 처리방침" />
-          <MenuRow icon={ICONS.geo} label="위치정보 이용약관" />
+          <MenuRow icon={ICONS.terms} label="서비스 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.terms)} />
+          <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
+          <MenuRow icon={ICONS.geo} label="위치정보 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.geo)} />
         </View>
 
-        {/* 로그아웃 / 회원 탈퇴 */}
-        <TouchableOpacity activeOpacity={0.7} style={{ paddingVertical: 14 }} onPress={() => setLogoutOpen(true)}>
-          <Text style={footerActionStyle}>로그아웃</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.7} style={{ paddingVertical: 14 }} onPress={() => router.push('/withdraw' as any)}>
-          <Text style={footerActionStyle}>회원 탈퇴</Text>
-        </TouchableOpacity>
+        {/* 로그아웃 / 회원 탈퇴 — 로그인 상태에서만 노출 */}
+        {loggedIn === true && (
+          <>
+            <TouchableOpacity activeOpacity={0.7} style={{ paddingVertical: 14 }} onPress={() => setLogoutOpen(true)}>
+              <Text style={footerActionStyle}>로그아웃</Text>
+            </TouchableOpacity>
+            <TouchableOpacity activeOpacity={0.7} style={{ paddingVertical: 14 }} onPress={() => router.push('/withdraw' as any)}>
+              <Text style={footerActionStyle}>회원 탈퇴</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
 
       <LogoutConfirmModal
@@ -161,6 +215,62 @@ export default function MyPageScreen() {
         onConfirm={handleLogout}
       />
     </SafeAreaView>
+  );
+}
+
+function LoginBanner({ onPress }: { onPress: () => void }) {
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface.card,
+        borderRadius: 14,
+        paddingHorizontal: 18,
+        paddingVertical: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 32,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            color: colors.fg.DEFAULT,
+            fontSize: 16,
+            fontWeight: '600',
+            lineHeight: 16 * 1.3,
+            letterSpacing: 16 * -0.015,
+          }}
+        >
+          로그인하고 편히 앉아가세요.
+        </Text>
+        <Text
+          style={{
+            color: colors.fg.muted,
+            fontSize: 13,
+            fontWeight: '400',
+            marginTop: 6,
+            letterSpacing: 13 * -0.015,
+          }}
+        >
+          가입 시 2 리워드 즉시 적립
+        </Text>
+      </View>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPress}
+        style={{
+          marginLeft: 12,
+          backgroundColor: colors.accent.blue,
+          borderRadius: 8,
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+        }}
+      >
+        <Text style={{ color: colors.fg.onAccent, fontSize: 13, fontWeight: '600', letterSpacing: 13 * -0.015 }}>
+          로그인
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
