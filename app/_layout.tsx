@@ -10,6 +10,10 @@ import '../src/shared/styles/global.css';
 
 SplashScreen.preventAutoHideAsync();
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 const TextAny = Text as any;
 TextAny.defaultProps = TextAny.defaultProps || {};
 TextAny.defaultProps.style = [{ fontFamily: 'Pretendard-Regular' }, TextAny.defaultProps.style];
@@ -53,6 +57,7 @@ export default function RootLayout() {
             animation: 'fade',
           }}
         >
+          <Stack.Screen name="index" />
           <Stack.Screen name="edit-car" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-seat" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="edit-appearance" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
