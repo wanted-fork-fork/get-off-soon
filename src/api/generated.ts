@@ -377,42 +377,42 @@ export async function refreshToken(body: RefreshTokenRequest): Promise<RefreshTo
 
 /** 로그아웃 */
 export async function logout(): Promise<void> {
-  return apiFetch('/api/v1/auth/logout', { method: 'POST' });
+  return apiFetch('/api/v1/auth/logout', { method: 'POST', auth: true });
 }
 
 /** 내 정보 조회 */
 export async function getMe(): Promise<GetMeResponse> {
-  return apiFetch('/api/v1/users/me', { method: 'GET' });
+  return apiFetch('/api/v1/users/me', { method: 'GET', auth: true });
 }
 
 /** 내 이름 수정 */
 export async function updateMyName(body: UpdateMyNameRequest): Promise<UpdateMyNameResponse> {
-  return apiFetch('/api/v1/users/me', { method: 'PATCH', body });
+  return apiFetch('/api/v1/users/me', { method: 'PATCH', body, auth: true });
 }
 
 /** 회원 탈퇴 */
 export async function deleteAccount(): Promise<void> {
-  return apiFetch('/api/v1/users/me', { method: 'DELETE' });
+  return apiFetch('/api/v1/users/me', { method: 'DELETE', auth: true });
 }
 
 /** FCM 토큰 등록 */
 export async function updateFcmToken(body: UpdateFcmTokenRequest): Promise<UpdateFcmTokenResponse> {
-  return apiFetch('/api/v1/users/me/fcm-token', { method: 'PUT', body });
+  return apiFetch('/api/v1/users/me/fcm-token', { method: 'PUT', body, auth: true });
 }
 
 /** 리워드 내역 조회 */
 export async function getRewards(): Promise<GetRewardsResponse> {
-  return apiFetch('/api/v1/users/me/rewards', { method: 'GET' });
+  return apiFetch('/api/v1/users/me/rewards', { method: 'GET', auth: true });
 }
 
 /** 출석 체크인 */
 export async function checkin(): Promise<CheckinResponse> {
-  return apiFetch('/api/v1/users/me/checkin', { method: 'POST' });
+  return apiFetch('/api/v1/users/me/checkin', { method: 'POST', auth: true });
 }
 
 /** 광고 시청 리워드 */
 export async function claimAdReward(): Promise<ClaimAdRewardResponse> {
-  return apiFetch('/api/v1/users/me/ad-reward', { method: 'POST' });
+  return apiFetch('/api/v1/users/me/ad-reward', { method: 'POST', auth: true });
 }
 
 /** 노선 목록 조회 */

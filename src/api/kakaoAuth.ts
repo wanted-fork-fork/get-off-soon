@@ -33,37 +33,23 @@ function describeKakaoError(err: unknown): { message: string; code?: string } {
  * 서비스 토큰을 발급받아 로컬 저장소에 저장한다.
  */
 export async function signInWithKakao(): Promise<void> {
-  console.log('[kakaoAuth] start');
-
   let useAccountLogin = true;
   try {
     useAccountLogin = !(await isKakaoTalkLoginAvailable());
-  } catch (err) {
-    console.warn('[kakaoAuth] isKakaoTalkLoginAvailable failed, fallback to account login', err);
+  } catch {
+    // 톡 가용성 확인 실패 시 안전하게 계정 로그인 사용
   }
-  console.log('[kakaoAuth] login mode:', useAccountLogin ? 'kakao-account-web' : 'kakaotalk');
 
   let kakaoAccessToken: string;
   try {
     const token = await kakaoLogin({ useKakaoAccountLogin: useAccountLogin });
-    console.log('[kakaoAuth] kakao token received, length=', token.accessToken?.length);
     kakaoAccessToken = token.accessToken;
   } catch (err) {
-    console.warn('[kakaoAuth] kakaoLogin failed', err);
     const { message, code } = describeKakaoError(err);
     throw new KakaoAuthError(message, { cause: err, code });
   }
 
-  console.log('[kakaoAuth] calling backend socialLogin(kakao)');
-  let res;
-  try {
-    res = await socialLogin('kakao', { accessToken: kakaoAccessToken });
-  } catch (err) {
-    console.warn('[kakaoAuth] backend socialLogin failed', err);
-    throw err;
-  }
-  console.log('[kakaoAuth] backend response received, hasAccessToken=', Boolean(res.accessToken));
-
+  const res = await socialLogin('kakao', { accessToken: kakaoAccessToken });
   if (!res.accessToken) {
     try {
       await kakaoLogout();
@@ -74,5 +60,4 @@ export async function signInWithKakao(): Promise<void> {
   }
 
   await persistAuthTokens(res.accessToken, res.refreshToken);
-  console.log('[kakaoAuth] tokens persisted');
 }

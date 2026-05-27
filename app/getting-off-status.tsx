@@ -347,7 +347,8 @@ export default function GettingOffStatusScreen() {
                 activeOpacity={0.8}
                 onPress={() => setSelectedReport(selected ? null : type)}
                 style={{
-                  width: 176,
+                  flexBasis: '45%',
+                  flexGrow: 1,
                   height: 56,
                   borderRadius: 12,
                   paddingVertical: 16,
@@ -355,7 +356,7 @@ export default function GettingOffStatusScreen() {
                   gap: 8,
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: '#262A30',
+                  backgroundColor: '#2D3239',
                 }}
               >
                 <View style={{

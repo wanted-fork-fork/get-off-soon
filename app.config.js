@@ -6,6 +6,12 @@ module.exports = ({ config }) => ({
       '@react-native-kakao/core',
       {
         nativeAppKey: process.env.EXPO_PUBLIC_KAKAO_APP_KEY ?? '',
+        android: {
+          authCodeHandlerActivity: true,
+        },
+        ios: {
+          handleKakaoOpenUrl: true,
+        },
       },
     ],
     [

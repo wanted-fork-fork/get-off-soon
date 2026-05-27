@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { TopBar } from '../src/components/ui/TopBar';
 import { getMe, logout } from '../src/api/generated';
+import type { GetMeResponse } from '../src/api/generated';
 import { resetAuth } from '../src/api/tokenStore';
 import { ApiError } from '../src/api/client';
 import { useJourney } from '../src/context/JourneyContext';
+import BrandKakao from '../assets/icons/BrandKakao.svg';
 
 const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
 
@@ -103,17 +105,16 @@ export default function MyPageScreen() {
   const { reset: resetJourney } = useJourney();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [me, setMe] = useState<GetMeResponse | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
   const refreshAuthStatus = React.useCallback(async () => {
     try {
-      const me = await getMe();
-      setLoggedIn(isSocialProvider(me.provider));
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setLoggedIn(false);
-        return;
-      }
+      const res = await getMe();
+      setMe(res);
+      setLoggedIn(isSocialProvider(res.provider));
+    } catch {
+      setMe(null);
       setLoggedIn(false);
     }
   }, []);
@@ -163,6 +164,13 @@ export default function MyPageScreen() {
       >
         {loggedIn === false && (
           <LoginBanner onPress={() => router.push('/login' as any)} />
+        )}
+
+        {loggedIn === true && me && (
+          <UserProfileBanner
+            label={(me as any).email ?? me.name ?? '회원'}
+            rewardPoints={me.rewardPoints ?? 0}
+          />
         )}
 
         {/* 이동 및 리워드 */}
@@ -216,6 +224,60 @@ export default function MyPageScreen() {
         onConfirm={handleLogout}
       />
     </SafeAreaView>
+  );
+}
+
+function UserProfileBanner({ label, rewardPoints }: { label: string; rewardPoints: number }) {
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface.card,
+        borderRadius: 14,
+        paddingHorizontal: 18,
+        paddingVertical: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 32,
+      }}
+    >
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            color: colors.fg.DEFAULT,
+            fontSize: 17,
+            fontWeight: '600',
+            letterSpacing: 17 * -0.015,
+          }}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+        <Text
+          style={{
+            color: colors.fg.muted,
+            fontSize: 13,
+            fontWeight: '400',
+            marginTop: 6,
+            letterSpacing: 13 * -0.015,
+          }}
+        >
+          보유 리워드 {rewardPoints}
+        </Text>
+      </View>
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: '#FEE500',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginLeft: 12,
+        }}
+      >
+        <BrandKakao width={20} height={20} />
+      </View>
+    </View>
   );
 }
 
