@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
 import { RoleCard } from '../src/components/ui/RoleCard';
-import { getMySeatShare, getMySeatRequest, getMe } from '../src/api/generated';
+import { getMySeatShare, getMySeatRequest, getMe, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted } from '../src/api/generated';
 import type { GetMySeatShareResponse, GetMySeatRequestResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 import { LINE_2_ID, LINE_2_STATIONS } from '../src/constants/subway';
@@ -44,18 +44,7 @@ export default function HomeScreen() {
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
   const [loadingActive, setLoadingActive] = useState(true);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
-
-  const params = useLocalSearchParams<{ endedBoard?: string; endedGetOff?: string }>();
   const [endedBanner, setEndedBanner] = useState<{ board: string; getOff: string } | null>(null);
-
-  useEffect(() => {
-    const board = typeof params.endedBoard === 'string' ? params.endedBoard : '';
-    const getOff = typeof params.endedGetOff === 'string' ? params.endedGetOff : '';
-    if (board || getOff) {
-      setEndedBanner({ board, getOff });
-      router.setParams({ endedBoard: undefined, endedGetOff: undefined } as any);
-    }
-  }, [params.endedBoard, params.endedGetOff]);
 
   useEffect(() => {
     getMe()
@@ -107,6 +96,20 @@ export default function HomeScreen() {
             didAutoRedirect = true;
             router.replace('/seat-seekers' as any);
             return;
+          }
+        } else {
+          const [latestShare, latestRequest] = await Promise.all([
+            getSeatSharesMeLatestCompleted().catch(() => null),
+            getSeatRequestsMeLatestCompleted().catch(() => null),
+          ]);
+          const shareTime = latestShare?.completedAt ? new Date(latestShare.completedAt).getTime() : 0;
+          const requestTime = latestRequest?.completedAt ? new Date(latestRequest.completedAt).getTime() : 0;
+          const latest = shareTime >= requestTime ? latestShare : latestRequest;
+          if (latest) {
+            setEndedBanner({
+              board: latest.boardStation?.name ?? '',
+              getOff: latest.getOffStation?.name ?? '',
+            });
           }
         }
       } catch (e) {

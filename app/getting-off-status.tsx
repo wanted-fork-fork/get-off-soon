@@ -7,10 +7,29 @@ import { colors } from '../src/constants/theme';
 import { getSeatZoneLabel, SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
 import { STATION_BY_ID, STATION_BY_NAME, LINE_2_STATIONS, LINE_2_ID } from '../src/constants/subway';
 import { Button } from '../src/components/ui/Button';
+import { BottomSheet } from '../src/components/ui/BottomSheet';
 import { getMySeatShare, earlyExitSeatShare, getTrainsByLine } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 import CallIcon from '../assets/icons/Call.svg';
 import EmailIcon from '../assets/icons/Email.svg';
+
+const REPORT_TYPES = [
+  '객실 온도 조정', '물품판매',
+  '선로무단통행', '소란행위',
+  '형사범', '성추행',
+  '불법촬영', '기타신고',
+] as const;
+
+const REPORT_TEMPLATES: Record<string, string> = {
+  '객실 온도 조정': '객실 온도가 너무 높거나 낮아 불편합니다. 온도 조정을 요청합니다.',
+  '물품판매': '열차 내 무허가 물품판매가 진행 중입니다.',
+  '선로무단통행': '선로 무단통행이 목격되었습니다.',
+  '소란행위': '열차 내 소란행위가 발생하고 있습니다.',
+  '형사범': '열차 내 형사범죄가 의심되는 상황입니다.',
+  '성추행': '열차 내 성추행이 발생했습니다. 즉시 조치 바랍니다.',
+  '불법촬영': '열차 내 불법촬영이 의심됩니다. 즉시 조치 바랍니다.',
+  '기타신고': '',
+};
 import TrainIcon from '../assets/icons/Train.svg';
 import EditIcon from '../assets/icons/Edit.svg';
 
@@ -33,6 +52,10 @@ export default function GettingOffStatusScreen() {
   const [ending, setEnding] = useState(false);
   const [boardStationName, setBoardStationName] = useState<string | null>(null);
   const [currentStationId, setCurrentStationId] = useState<string | null>(null);
+  const [trainNo, setTrainNo] = useState<string | null>(null);
+  const [reportSheetOpen, setReportSheetOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<string | null>(null);
+
 
   useEffect(() => {
     (async () => {
@@ -74,6 +97,7 @@ export default function GettingOffStatusScreen() {
         if (cancelled) return;
         const train = res.trains?.find((t) => t.id === state.trainId);
         if (train?.currentStationId) setCurrentStationId(train.currentStationId);
+        if (train?.trainNo) setTrainNo(train.trainNo);
       } catch (err) {
         if (err instanceof ApiError) return;
       }
@@ -127,12 +151,12 @@ export default function GettingOffStatusScreen() {
       try {
         const res = await getMySeatShare();
         if (cancelled) return;
-        const isDone = !res || (res.status != null && res.status !== 'ACTIVE');
+        const isDone = !res || (res.status != null && res.status !== 'active');
         if (isDone) {
           reset();
           router.replace({
             pathname: '/journey-end',
-            params: { endedBoard: boardName, endedGetOff: getOffName },
+            params: { role: 'getting-off' },
           } as any);
         }
       } catch (err) {
@@ -148,7 +172,7 @@ export default function GettingOffStatusScreen() {
 
   const handleEnd = async () => {
     if (ending) return;
-    const endParams = { endedBoard: boardName, endedGetOff: getOffName };
+    const endParams = { role: 'getting-off' };
     if (state.shareId) {
       setEnding(true);
       try {
@@ -275,7 +299,7 @@ export default function GettingOffStatusScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => Linking.openURL('sms:1577-1234')}
+              onPress={() => { setSelectedReport(null); setReportSheetOpen(true); }}
               style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#262A30', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16 }}
             >
               <EmailIcon width={20} height={20} />
@@ -305,6 +329,76 @@ export default function GettingOffStatusScreen() {
           <Text style={{ color: '#0095F8', fontSize: 16, fontWeight: '400' }}>먼저 내렸어요</Text>
         </TouchableOpacity>
       </View>
+
+      <BottomSheet open={reportSheetOpen} onClose={() => setReportSheetOpen(false)} showHandle={false}>
+        <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
+          열차에서 불편함을 느끼셨나요?
+        </Text>
+        <Text style={{ color: colors.fg.secondary, fontSize: 14, fontWeight: '400', marginBottom: 20 }}>
+          유형을 선택하면 신고 문자를 완성해드려요.
+        </Text>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+          {REPORT_TYPES.map((type) => {
+            const selected = selectedReport === type;
+            return (
+              <TouchableOpacity
+                key={type}
+                activeOpacity={0.8}
+                onPress={() => setSelectedReport(selected ? null : type)}
+                style={{
+                  width: 176,
+                  height: 56,
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  paddingHorizontal: 12,
+                  gap: 8,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: '#262A30',
+                }}
+              >
+                <View style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: 10,
+                  borderWidth: 2,
+                  borderColor: selected ? colors.accent.blue : '#484B51',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  {selected && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent.blue }} />}
+                </View>
+                <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '400' }}>{type}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Button label="돌아가기" variant="outline" onPress={() => setReportSheetOpen(false)} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="문자로 신고하기"
+              onPress={() => {
+                setReportSheetOpen(false);
+                const lineName = '2호선';
+                const carInfo = state.carNumbers.length > 0
+                  ? state.carNumbers.sort((a, b) => a - b).join(', ') + '호차'
+                  : '';
+                const trainInfo = trainNo ? `${trainNo}열차` : '';
+                const location = [lineName, trainInfo, carInfo].filter(Boolean).join(' ');
+                const template = REPORT_TEMPLATES[selectedReport!] ?? '';
+                const body = `[${selectedReport}] ${location}\n${template}`;
+                Linking.openURL(`sms:1577-1234&body=${encodeURIComponent(body)}`);
+              }}
+              disabled={!selectedReport}
+            />
+          </View>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }

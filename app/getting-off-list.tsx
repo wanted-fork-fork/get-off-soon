@@ -79,7 +79,7 @@ export default function GettingOffListScreen() {
             <Button label="돌아가기" onPress={() => router.back()} variant="secondary" />
           </View>
           <View style={{ flex: 1 }}>
-            <Button label="여정 종료" onPress={() => router.push('/journey-end' as any)} variant="primary" />
+            <Button label="여정 종료" onPress={() => router.push({ pathname: '/journey-end', params: { role: 'getting-off' } } as any)} variant="primary" />
           </View>
         </View>
       </BottomButtonArea>

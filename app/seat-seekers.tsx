@@ -70,7 +70,6 @@ export default function SeatSeekersScreen() {
     (async () => {
       try {
         const sharesRes = await getSharesForMyRequest({ carriage: filterCar });
-        console.log('[getSharesForMyRequest] carriage=', filterCar, sharesRes);
         if (cancelled) return;
         const flat: Share[] = [];
         for (const c of sharesRes.carriages ?? []) {
@@ -129,10 +128,7 @@ export default function SeatSeekersScreen() {
 
   const handleEnd = async () => {
     if (ending) return;
-    const endParams = {
-      endedBoard: '좌석',
-      endedGetOff: station?.name ?? '',
-    };
+    const endParams = { role: 'want-seat' };
     if (state.requestId) {
       setEnding(true);
       try {
