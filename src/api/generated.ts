@@ -79,8 +79,17 @@ export type GetRewardsResponse = {
   history?: Array<{
     id?: string;
     type?: string;
+    label?: string;
     amount?: number;
     createdAt?: string;
+    share?: {
+      boardStationName?: string;
+      boardLineName?: string;
+      boardLineColor?: string;
+      getOffStationName?: string;
+      getOffLineName?: string;
+      getOffLineColor?: string;
+    } | null;
   }>;
 };
 
@@ -144,15 +153,14 @@ export type GetTrainsDebugResponse = {
 export type GetTrainsByStationResponse = {
   trains?: Array<{
     id?: string;
-    lineId?: string;
     trainNo?: string;
-    direction?: number;
-    currentStationId?: string | null;
-    terminalStationId?: string | null;
-    trainStatus?: number | null;
-    isExpress?: number | null;
-    isLastTrain?: number | null;
-    status?: string;
+    direction?: string;
+    terminalStationName?: string | null;
+    nextStationName?: string | null;
+    trainStatus?: string;
+    trainStatusCode?: number | null;
+    isExpress?: boolean;
+    isLastTrain?: boolean;
   }>;
 };
 
@@ -188,6 +196,42 @@ export type GetMySeatShareResponse = {
   createdAt?: string;
 } | null;
 
+export type GetSeatSharesMeLatestCompletedResponse = {
+  boardStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  getOffStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  completedAt?: string;
+  status?: string;
+  earnedReward?: number;
+  remainingReward?: number;
+} | null;
+
+export type UpdateSeatSharesRequest = {
+  carriages?: number[];
+  seatPosition?: number;
+  appearance?: string;
+  getOffStationId?: string;
+};
+
+export type UpdateSeatSharesResponse = {
+  id?: string;
+  trainId?: string;
+  boardStationName?: string;
+  getOffStationName?: string;
+  carriages?: number[];
+  seatPosition?: number;
+  appearance?: string;
+  status?: string;
+  createdAt?: string;
+};
+
 export type CancelSeatShareResponse = Record<string, never>;
 
 export type EarlyExitSeatShareResponse = Record<string, never>;
@@ -218,6 +262,38 @@ export type GetMySeatRequestResponse = {
   createdAt?: string;
 };
 
+export type GetSeatRequestsMeLatestCompletedResponse = {
+  boardStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  getOffStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  completedAt?: string;
+  status?: string;
+  spentReward?: number;
+  remainingReward?: number;
+} | null;
+
+export type UpdateSeatRequestsRequest = {
+  carriages?: number[];
+  getOffStationId?: string;
+};
+
+export type UpdateSeatRequestsResponse = {
+  id?: string;
+  trainId?: string;
+  boardStationName?: string;
+  getOffStationName?: string;
+  carriages?: number[];
+  status?: 'active' | 'completed' | 'early_exit' | 'cancelled';
+  createdAt?: string;
+};
+
 export type CancelSeatRequestResponse = Record<string, never>;
 
 export type EarlyExitSeatRequestResponse = Record<string, never>;
@@ -229,8 +305,11 @@ export type GetSharesForMyRequestResponse = {
       id?: string;
       boardStationName?: string;
       getOffStationName?: string;
+      carriages?: number[];
       stopsAway?: number;
       status?: string;
+      appearance?: string | null;
+      seatPosition?: number | null;
     }>;
   }>;
 };
@@ -243,10 +322,22 @@ export type ViewShareDetailResponse = {
 };
 
 export type GetViewedSharesResponse = {
-  viewed?: Array<{
+  upcoming?: Array<{
     shareId?: string;
     boardStationName?: string;
     getOffStationName?: string;
+    carriages?: number[];
+    seatPosition?: number;
+    appearance?: string;
+    sharerStatus?: string;
+    stopsAway?: number;
+    viewedAt?: string;
+  }>;
+  completed?: Array<{
+    shareId?: string;
+    boardStationName?: string;
+    getOffStationName?: string;
+    carriages?: number[];
     seatPosition?: number;
     appearance?: string;
     sharerStatus?: string;
@@ -359,6 +450,16 @@ export async function getMySeatShare(): Promise<GetMySeatShareResponse> {
   return apiFetch('/api/v1/seat-shares/me', { method: 'GET', auth: true });
 }
 
+/** 최근 완료된 자리 공유 여정 조회 */
+export async function getSeatSharesMeLatestCompleted(): Promise<GetSeatSharesMeLatestCompletedResponse> {
+  return apiFetch('/api/v1/seat-shares/me/latest-completed', { method: 'GET', auth: true });
+}
+
+/** 자리 공유 정보 수정 */
+export async function updateSeatShares(shareId: string, body: UpdateSeatSharesRequest): Promise<UpdateSeatSharesResponse> {
+  return apiFetch(`/api/v1/seat-shares/${shareId}`, { method: 'PATCH', body, auth: true });
+}
+
 /** 자리 공유 취소 */
 export async function cancelSeatShare(shareId: string): Promise<CancelSeatShareResponse> {
   return apiFetch(`/api/v1/seat-shares/${shareId}`, { method: 'DELETE', auth: true });
@@ -377,6 +478,16 @@ export async function createSeatRequest(body: CreateSeatRequestRequest): Promise
 /** active 착석 희망 조회 */
 export async function getMySeatRequest(): Promise<GetMySeatRequestResponse> {
   return apiFetch('/api/v1/seat-requests/me', { method: 'GET', auth: true });
+}
+
+/** 최근 완료된 착석 희망 여정 조회 */
+export async function getSeatRequestsMeLatestCompleted(): Promise<GetSeatRequestsMeLatestCompletedResponse> {
+  return apiFetch('/api/v1/seat-requests/me/latest-completed', { method: 'GET', auth: true });
+}
+
+/** 착석 희망 정보 수정 */
+export async function updateSeatRequests(requestId: string, body: UpdateSeatRequestsRequest): Promise<UpdateSeatRequestsResponse> {
+  return apiFetch(`/api/v1/seat-requests/${requestId}`, { method: 'PATCH', body, auth: true });
 }
 
 /** 착석 희망 취소 */

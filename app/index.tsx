@@ -238,44 +238,25 @@ export default function HomeScreen() {
             right: 16,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: '#162544',
-            borderRadius: 16,
-            paddingVertical: 18,
-            paddingLeft: 24,
-            paddingRight: 16,
-            overflow: 'hidden',
+            backgroundColor: '#2D3239',
+            borderRadius: 12,
+            padding: 20,
+            gap: 8,
           }}
         >
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text style={{ color: '#8AB4FF', fontSize: 13, fontWeight: '500' }}>
+          <View style={{ flex: 1, gap: 8 }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '600', letterSpacing: 14 * -0.015 }}>
               회원 가입 시 2 리워드 지급!
             </Text>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '600' }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', letterSpacing: 18 * -0.015 }}>
               로그인하고 두 번 더 앉아가세요.
             </Text>
           </View>
-          <View style={{ alignItems: 'center', justifyContent: 'center', marginLeft: 12 }}>
-            <Image
-              source={require('../assets/images/shoes.png')}
-              style={{ width: 56, height: 56 }}
-              resizeMode="contain"
-            />
-            <View
-              style={{
-                position: 'absolute',
-                bottom: -2,
-                right: -2,
-                width: 24,
-                height: 24,
-                borderRadius: 12,
-                backgroundColor: colors.accent.blue,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Text style={{ color: colors.white, fontSize: 14, fontWeight: '700', marginTop: -1 }}>✓</Text>
-            </View>
-          </View>
+          <Image
+            source={require('../assets/images/check_badge.png')}
+            style={{ width: 48, height: 48 }}
+            resizeMode="contain"
+          />
         </Pressable>
       );
     }

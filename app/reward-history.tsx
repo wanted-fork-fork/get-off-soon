@@ -1,67 +1,32 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { colors } from '../src/constants/theme';
 import { TopBar } from '../src/components/ui/TopBar';
+import { getRewards, GetRewardsResponse } from '../src/api/generated';
+import { ApiError } from '../src/api/client';
 
-type RewardRoute = {
-  from: { line: number; name: string };
-  to: { line: number; name: string };
-};
+type RewardHistoryItem = NonNullable<GetRewardsResponse['history']>[number];
 
-type RewardItem = {
-  id: string;
-  date: string;
-  title: string;
-  amount: number;
-  route?: RewardRoute;
-};
+function formatDate(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}.${m}.${day}`;
+}
 
-const CURRENT_BALANCE = 30;
+function extractLineNumber(lineName?: string): string {
+  if (!lineName) return '';
+  const match = lineName.match(/(\d+)/);
+  return match ? match[1] : lineName.charAt(0);
+}
 
-const DUMMY_ITEMS: RewardItem[] = [
-  { id: '1', date: '2026.04.20', title: '광고 시청', amount: 1 },
-  {
-    id: '2',
-    date: '2026.04.20',
-    title: '정보 열람',
-    amount: -1,
-    route: { from: { line: 2, name: '사당' }, to: { line: 2, name: '홍대입구' } },
-  },
-  {
-    id: '3',
-    date: '2026.04.20',
-    title: '정보 열람',
-    amount: -1,
-    route: { from: { line: 2, name: '사당' }, to: { line: 2, name: '홍대입구' } },
-  },
-  {
-    id: '4',
-    date: '2026.04.20',
-    title: '정보 열람',
-    amount: -1,
-    route: { from: { line: 2, name: '사당' }, to: { line: 2, name: '홍대입구' } },
-  },
-  { id: '5', date: '2026.04.19', title: '광고 시청', amount: 1 },
-  { id: '6', date: '2026.04.10', title: '좌석 정보 열람', amount: -1 },
-  { id: '7', date: '2026.04.01', title: '자리 정보 등록', amount: 1 },
-];
-
-const LINE_COLORS: Record<number, string> = {
-  1: '#0052A4',
-  2: '#00A44A',
-  3: '#EF7C1C',
-  4: '#00A4E3',
-  5: '#996CAC',
-  6: '#CD7C2F',
-  7: '#747F00',
-  8: '#E6186C',
-  9: '#BDB092',
-};
-
-function LineBadge({ line, name }: { line: number; name: string }) {
+function LineBadge({ lineName, lineColor, stationName }: { lineName?: string; lineColor?: string; stationName?: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
       <View
@@ -69,30 +34,40 @@ function LineBadge({ line, name }: { line: number; name: string }) {
           width: 16,
           height: 16,
           borderRadius: 8,
-          backgroundColor: LINE_COLORS[line] ?? colors.line[2],
+          backgroundColor: lineColor ?? colors.line[2],
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Text style={{ color: colors.white, fontSize: 10, fontWeight: '700' }}>{line}</Text>
+        <Text style={{ color: colors.white, fontSize: 10, fontWeight: '700' }}>{extractLineNumber(lineName)}</Text>
       </View>
-      <Text style={{ color: colors.fg.secondary, fontSize: 13 }}>{name}</Text>
+      <Text style={{ color: colors.fg.secondary, fontSize: 13 }}>{stationName}</Text>
     </View>
   );
 }
 
-function RewardRow({ item }: { item: RewardItem }) {
-  const isPositive = item.amount > 0;
+function RewardRow({ item }: { item: RewardHistoryItem }) {
+  const amount = item.amount ?? 0;
+  const isPositive = amount > 0;
+  const share = item.share ?? undefined;
   return (
     <View style={{ paddingVertical: 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <View style={{ flex: 1, gap: 6 }}>
-          <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>{item.title}</Text>
-          {item.route && (
+          <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>{item.label ?? item.type ?? ''}</Text>
+          {share && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <LineBadge line={item.route.from.line} name={item.route.from.name} />
+              <LineBadge
+                lineName={share.boardLineName}
+                lineColor={share.boardLineColor}
+                stationName={share.boardStationName}
+              />
               <Text style={{ color: colors.fg.muted, fontSize: 12 }}>→</Text>
-              <LineBadge line={item.route.to.line} name={item.route.to.name} />
+              <LineBadge
+                lineName={share.getOffLineName}
+                lineColor={share.getOffLineColor}
+                stationName={share.getOffStationName}
+              />
             </View>
           )}
         </View>
@@ -104,7 +79,7 @@ function RewardRow({ item }: { item: RewardItem }) {
             marginLeft: 12,
           }}
         >
-          {isPositive ? `+${item.amount}` : `${item.amount}`}
+          {isPositive ? `+${amount}` : `${amount}`}
         </Text>
       </View>
     </View>
@@ -123,19 +98,47 @@ function EmptyIllustration() {
 
 export default function RewardHistoryScreen() {
   const router = useRouter();
-  const items = DUMMY_ITEMS;
+  const [rewardPoints, setRewardPoints] = useState(0);
+  const [items, setItems] = useState<RewardHistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await getRewards();
+        if (!active) return;
+        setRewardPoints(res.rewardPoints ?? 0);
+        setItems(res.history ?? []);
+      } catch (err) {
+        if (!active) return;
+        if (err instanceof ApiError) {
+          setError(err.message);
+        } else {
+          setError('리워드 내역을 불러오지 못했습니다.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, RewardItem[]>();
+    const map = new Map<string, RewardHistoryItem[]>();
     items.forEach(item => {
-      const arr = map.get(item.date) ?? [];
+      const date = formatDate(item.createdAt);
+      const arr = map.get(date) ?? [];
       arr.push(item);
-      map.set(item.date, arr);
+      map.set(date, arr);
     });
     return Array.from(map.entries());
   }, [items]);
 
-  const isEmpty = items.length === 0;
+  const isEmpty = !loading && items.length === 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
@@ -145,13 +148,21 @@ export default function RewardHistoryScreen() {
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 }}>
         <Text style={{ color: colors.fg.secondary, fontSize: 14, marginBottom: 8 }}>현재 보유 리워드</Text>
         <Text style={{ color: colors.fg.DEFAULT, fontSize: 32, fontWeight: '700', letterSpacing: -0.5 }}>
-          {isEmpty ? 0 : CURRENT_BALANCE}
+          {rewardPoints}
         </Text>
       </View>
 
       <View style={{ height: 1, backgroundColor: colors.divider }} />
 
-      {isEmpty ? (
+      {loading ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.fg.muted} />
+        </View>
+      ) : error ? (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+          <Text style={{ color: colors.fg.muted, fontSize: 14, textAlign: 'center' }}>{error}</Text>
+        </View>
+      ) : isEmpty ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24 }}>
           <EmptyIllustration />
           <Text style={{ color: colors.fg.muted, fontSize: 14 }}>리워드 적립 및 사용 내역이 없습니다.</Text>
