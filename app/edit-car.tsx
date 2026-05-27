@@ -7,16 +7,16 @@ import { CarGrid } from '../src/components/ui/CarGrid';
 import { Button, BottomButtonArea } from '../src/components/ui/Button';
 import { useJourney } from '../src/context/JourneyContext';
 import { colors } from '../src/constants/theme';
-import { updateSeatShare } from '../src/api/seatShareUpdate';
+import { updateSeatShares } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 
 export default function EditCarScreen() {
   const router = useRouter();
-  const { state, toggleCar, setShareId } = useJourney();
+  const { state, toggleCar } = useJourney();
   const [submitting, setSubmitting] = useState(false);
 
   const handleDone = async () => {
-    if (!state.shareId || !state.trainId || !state.stationId || !state.seatZone) {
+    if (!state.shareId) {
       Alert.alert('수정할 수 없어요', '공유 정보가 누락되었어요.');
       return;
     }
@@ -24,15 +24,7 @@ export default function EditCarScreen() {
 
     setSubmitting(true);
     try {
-      const newId = await updateSeatShare({
-        currentShareId: state.shareId,
-        trainId: state.trainId,
-        getOffStationId: state.stationId,
-        carriages: state.carNumbers,
-        seatZone: state.seatZone,
-        appearance: state.appearance.trim(),
-      });
-      setShareId(newId);
+      await updateSeatShares(state.shareId, { carriages: state.carNumbers });
       router.dismiss();
     } catch (err) {
       if (err instanceof ApiError) Alert.alert('수정 실패', err.message);
