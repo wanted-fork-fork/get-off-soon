@@ -44,3 +44,8 @@ export async function resetAuth(): Promise<void> {
   bootstrapPromise = null;
   await bootstrapAuth();
 }
+
+/** 소셜 로그인 응답을 저장 — 이후 bootstrap이 재실행되더라도 저장된 토큰을 사용한다. */
+export async function persistAuthTokens(access: string, refresh?: string): Promise<void> {
+  await asyncStorageTokenStore.setTokens(access, refresh);
+}

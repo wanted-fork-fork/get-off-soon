@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import BrandGoogle from '../assets/icons/BrandGoogle.svg';
 import BrandApple from '../assets/icons/BrandApple.svg';
 import BrandKakao from '../assets/icons/BrandKakao.svg';
+import { signInWithKakao, KakaoAuthError } from '../src/api/kakaoAuth';
+import { ApiError } from '../src/api/client';
 
 const KAKAO_YELLOW = '#FEE500';
 
@@ -15,13 +17,15 @@ interface SocialButtonProps {
   background: string;
   textColor: string;
   onPress: () => void;
+  disabled?: boolean;
 }
 
-function SocialButton({ icon, label, background, textColor, onPress }: SocialButtonProps) {
+function SocialButton({ icon, label, background, textColor, onPress, disabled }: SocialButtonProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
+      disabled={disabled}
       style={{
         height: 44,
         borderRadius: 99,
@@ -30,6 +34,7 @@ function SocialButton({ icon, label, background, textColor, onPress }: SocialBut
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 16,
+        opacity: disabled ? 0.6 : 1,
       }}
     >
       <View style={{ width: 22, height: 22, alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
@@ -44,6 +49,7 @@ function SocialButton({ icon, label, background, textColor, onPress }: SocialBut
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [submitting, setSubmitting] = useState<'kakao' | 'google' | 'apple' | null>(null);
 
   const handleClose = () => {
     if (router.canGoBack()) {
@@ -57,8 +63,23 @@ export default function LoginScreen() {
     // TODO: Google OAuth
   };
 
-  const handleKakao = () => {
-    // TODO: Kakao OAuth
+  const handleKakao = async () => {
+    if (submitting) return;
+    setSubmitting('kakao');
+    try {
+      await signInWithKakao();
+      router.replace('/' as any);
+    } catch (err) {
+      if (err instanceof KakaoAuthError) {
+        Alert.alert('로그인 실패', err.message);
+      } else if (err instanceof ApiError) {
+        Alert.alert('로그인 실패', err.message);
+      } else {
+        Alert.alert('로그인 실패', '잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   const handleApple = () => {
@@ -130,10 +151,11 @@ export default function LoginScreen() {
           />
           <SocialButton
             icon={<BrandKakao width={18} height={18} />}
-            label="카카오톡으로 시작하기"
+            label={submitting === 'kakao' ? '카카오 로그인 중...' : '카카오톡으로 시작하기'}
             background={KAKAO_YELLOW}
             textColor="#000000"
             onPress={handleKakao}
+            disabled={submitting !== null}
           />
           <SocialButton
             icon={<BrandApple width={18} height={18} />}
