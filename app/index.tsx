@@ -6,10 +6,10 @@ import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
 import { RoleCard } from '../src/components/ui/RoleCard';
-import { getMySeatShare, getMySeatRequest, getMe, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted } from '../src/api/generated';
+import { getMySeatShare, getMySeatRequest, getMe, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted, getTrainsByLine } from '../src/api/generated';
 import type { GetMySeatShareResponse, GetMySeatRequestResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
-import { LINE_2_ID, LINE_2_STATIONS } from '../src/constants/subway';
+import { LINE_2_ID, LINE_2_STATIONS, STATION_BY_ID, STATION_BY_NAME } from '../src/constants/subway';
 import { SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
 
 const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
@@ -21,8 +21,35 @@ function isSocialProvider(provider: string | undefined | null): boolean {
 type ActiveShare = NonNullable<GetMySeatShareResponse>;
 type ActiveRequest = GetMySeatRequestResponse;
 
-// cold start 시 1회만 자동 라우팅. 이후 사용자가 홈으로 돌아오면 끌고가지 않음.
-let didAutoRedirect = false;
+// 앱을 새로 켜서 홈에 처음 진입한 cold start 때만 진행 중인 여정 페이지로 자동 이동한다.
+// 앱이 이미 켜져 있는 상태(여정 페이지에서 홈으로 복귀 등)에서는 자동 이동하지 않는다.
+// JS 런타임은 cold start에서만 새로 뜨므로, 모듈 전역 플래그로 "최초 진입 1회"를 판별한다.
+let didInitialRouting = false;
+
+const JOURNEY_IN_PROGRESS_TEXT = '여정 중에는\n자리 정보 등록을 할 수 없어요.';
+
+const AVG_MIN_PER_STATION = 2;
+
+// getting-off-status 화면과 동일한 방식으로 도착 예정 시각(xx:xx)을 계산한다.
+function computeEtaText(
+  boardName: string | undefined,
+  getOffStationId: string | undefined,
+  currentStationId: string | null | undefined,
+): string | null {
+  const boardStation = boardName ? STATION_BY_NAME[boardName] : null;
+  const getOffStation = getOffStationId ? STATION_BY_ID[getOffStationId] : null;
+  const currentStation = currentStationId ? STATION_BY_ID[currentStationId] : null;
+  if (!boardStation || !getOffStation || !currentStation) return null;
+
+  const total = Math.abs(getOffStation.order - boardStation.order);
+  if (total <= 0) return null;
+  const direction = getOffStation.order >= boardStation.order ? 1 : -1;
+  const traveled = (currentStation.order - boardStation.order) * direction;
+  const stationsRemaining = Math.max(0, total - Math.max(0, traveled));
+
+  const eta = new Date(Date.now() + stationsRemaining * AVG_MIN_PER_STATION * 60_000);
+  return `${String(eta.getHours()).padStart(2, '0')}:${String(eta.getMinutes()).padStart(2, '0')}`;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -45,6 +72,7 @@ export default function HomeScreen() {
   const [loadingActive, setLoadingActive] = useState(true);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [endedBanner, setEndedBanner] = useState<{ board: string; getOff: string } | null>(null);
+  const [etaText, setEtaText] = useState<string | null>(null);
 
   useEffect(() => {
     getMe()
@@ -53,12 +81,17 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    // 최초 홈 진입(cold start)인지 동기적으로 확정한다. 이후 홈 재진입은 warm으로 간주.
+    const isColdStart = !didInitialRouting;
+    didInitialRouting = true;
     (async () => {
       try {
         const [shareRes, requestRes] = await Promise.all([
           getMySeatShare(),
           getMySeatRequest(),
         ]);
+        console.log('[home] getMySeatShare 응답:', JSON.stringify(shareRes, null, 2));
+        console.log('[home] getMySeatRequest 응답:', JSON.stringify(requestRes, null, 2));
 
         if (shareRes) {
           setActiveShare(shareRes);
@@ -76,8 +109,7 @@ export default function HomeScreen() {
             if (zone) setSeatZone(zone);
           }
           if (shareRes.appearance) setAppearance(shareRes.appearance);
-          if (!didAutoRedirect) {
-            didAutoRedirect = true;
+          if (isColdStart) {
             router.replace('/getting-off-status' as any);
             return;
           }
@@ -123,6 +155,36 @@ export default function HomeScreen() {
     })();
   }, []);
 
+  // 진행 중인 여정(하차 공유·착석 희망)이 있으면 열차 위치를 받아 도착 예정 시각을 계산한다.
+  const activeJourney = activeShare ?? activeRequest;
+  const journeyTrainId = activeJourney?.trainId;
+  const journeyBoardName = activeJourney?.boardStationName;
+  const journeyGetOffName = activeJourney?.getOffStationName;
+  useEffect(() => {
+    if (!journeyTrainId) {
+      setEtaText(null);
+      return;
+    }
+    let cancelled = false;
+    const fetchEta = async () => {
+      try {
+        const res = await getTrainsByLine(LINE_2_ID);
+        if (cancelled) return;
+        const train = res.trains?.find((t) => t.id === journeyTrainId);
+        const found = LINE_2_STATIONS.find((s) => s.name === journeyGetOffName);
+        setEtaText(computeEtaText(journeyBoardName, found?.id, train?.currentStationId));
+      } catch (err) {
+        if (err instanceof ApiError) return;
+      }
+    };
+    fetchEta();
+    const id = setInterval(fetchEta, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [journeyTrainId, journeyGetOffName, journeyBoardName]);
+
   const handleGettingOff = () => {
     reset();
     setRole('getting-off');
@@ -167,7 +229,7 @@ export default function HomeScreen() {
               {top}
             </Text>
             <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
-              진행 중인 하차 공유
+              {`${etaText ?? '--:--'} 도착 예정입니다.`}
             </Text>
           </View>
           <Image
@@ -191,7 +253,7 @@ export default function HomeScreen() {
               {top}
             </Text>
             <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
-              착석 희망 중
+              {`${etaText ?? '--:--'} 도착 예정입니다.`}
             </Text>
           </View>
           <Image
@@ -275,14 +337,18 @@ export default function HomeScreen() {
           <RoleCard
             title="곧 내려요"
             description="내 자리를 다른 사람에게 알려주세요."
-            onPress={handleGettingOff}
+            onPress={activeShare ? () => router.replace('/getting-off-status' as any) : handleGettingOff}
             image={require('../assets/images/main_1.png')}
+            disabled={!!activeRequest}
+            disabledText={JOURNEY_IN_PROGRESS_TEXT}
           />
           <RoleCard
             title="앉고 싶어요"
             description={'곧 내릴 사람을 먼저 확인하고\n편히 앉아가세요.'}
-            onPress={handleWantSeat}
+            onPress={activeRequest ? () => router.replace('/seat-seekers' as any) : handleWantSeat}
             image={require('../assets/images/main_2.png')}
+            disabled={!!activeShare}
+            disabledText={JOURNEY_IN_PROGRESS_TEXT}
           />
         </View>
       </ScrollView>
