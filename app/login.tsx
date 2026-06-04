@@ -7,6 +7,7 @@ import BrandGoogle from '../assets/icons/BrandGoogle.svg';
 import BrandApple from '../assets/icons/BrandApple.svg';
 import BrandKakao from '../assets/icons/BrandKakao.svg';
 import { signInWithKakao, KakaoAuthError } from '../src/api/kakaoAuth';
+import { signInWithDev } from '../src/api/tokenStore';
 import { ApiError } from '../src/api/client';
 
 const KAKAO_YELLOW = '#FEE500';
@@ -59,8 +60,21 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogle = () => {
-    // TODO: Google OAuth
+  const handleGoogle = async () => {
+    if (submitting) return;
+    setSubmitting('google');
+    try {
+      await signInWithDev();
+      router.replace('/' as any);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        Alert.alert('로그인 실패', err.message);
+      } else {
+        Alert.alert('로그인 실패', '잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      setSubmitting(null);
+    }
   };
 
   const handleKakao = async () => {
@@ -144,10 +158,11 @@ export default function LoginScreen() {
         <View style={{ gap: 12 }}>
           <SocialButton
             icon={<BrandGoogle width={18} height={18} />}
-            label="Google로 시작하기"
+            label={submitting === 'google' ? '로그인 중...' : 'Google로 시작하기'}
             background="#FFFFFF"
             textColor="#000000"
             onPress={handleGoogle}
+            disabled={submitting !== null}
           />
           <SocialButton
             icon={<BrandKakao width={18} height={18} />}
