@@ -21,7 +21,9 @@ export default function WithdrawScreen() {
     try {
       await deleteAccount();
     } catch (err) {
+      console.log('[withdraw] deleteAccount error:', err);
       if (err instanceof ApiError) {
+        console.log('[withdraw] ApiError code/status/message:', err.code, err.statusCode, err.message);
         Alert.alert('탈퇴 실패', err.message);
       } else {
         Alert.alert('탈퇴 실패', '잠시 후 다시 시도해주세요.');
@@ -33,7 +35,8 @@ export default function WithdrawScreen() {
       await resetAuth();
       resetJourney();
       router.replace('/' as any);
-    } catch {
+    } catch (err) {
+      console.log('[withdraw] resetAuth/post-delete error:', err);
       Alert.alert('탈퇴 처리 실패', '잠시 후 다시 시도해주세요.');
     } finally {
       setSubmitting(false);

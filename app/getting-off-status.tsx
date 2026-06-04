@@ -61,6 +61,7 @@ export default function GettingOffStatusScreen() {
     (async () => {
       try {
         const res = await getMySeatShare();
+        console.log('[getting-off-status] getMySeatShare:', JSON.stringify(res, null, 2));
         if (!res) return;
         setShareId(res.id!);
         if (res.boardStationName) setBoardStationName(res.boardStationName);
@@ -150,6 +151,7 @@ export default function GettingOffStatusScreen() {
     const checkShare = async () => {
       try {
         const res = await getMySeatShare();
+        console.log('[getting-off-status] poll getMySeatShare:', JSON.stringify(res, null, 2));
         if (cancelled) return;
         const isDone = !res || (res.status != null && res.status !== 'active');
         if (isDone) {
