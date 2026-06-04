@@ -33,6 +33,7 @@ export default function OnboardingLayout() {
             headerShown: false,
             contentStyle: { backgroundColor: colors.surface.DEFAULT },
             animation: 'slide_from_right',
+            gestureEnabled: false,
           }}
         />
       </View>

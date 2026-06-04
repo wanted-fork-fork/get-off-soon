@@ -65,6 +65,7 @@ export default function RootLayout() {
             headerShown: false,
             contentStyle: { backgroundColor: '#1B1D22' },
             animation: 'fade',
+            gestureEnabled: false,
           }}
         >
           <Stack.Screen name="index" />
