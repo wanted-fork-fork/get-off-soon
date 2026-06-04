@@ -36,13 +36,17 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
           곧 내려요
         </Text>
       ) : (
-        <TouchableOpacity onPress={handleBack} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity
+          onPress={handleBack}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+        >
           <ArrowLeftIcon width={24} height={24} />
         </TouchableOpacity>
       )}
 
       {title && variant !== 'home' && (
-        <Text style={{ position: 'absolute', left: 0, right: 0, textAlign: 'center', color: colors.fg.DEFAULT, fontSize: 17, fontWeight: '600', pointerEvents: 'none' }}>
+        <Text pointerEvents="none" style={{ position: 'absolute', left: 56, right: 56, textAlign: 'center', color: colors.fg.DEFAULT, fontSize: 17, fontWeight: '600' }}>
           {title}
         </Text>
       )}
