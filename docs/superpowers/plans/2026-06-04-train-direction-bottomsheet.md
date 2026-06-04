@@ -1,3 +1,41 @@
+# 열차 선택 바텀시트 방면 탭 Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** `select-line.tsx`의 열차 선택 바텀시트를 방면(인접역) 탭 + 방면별 열차 라디오 목록 형태로 변경한다.
+
+**Architecture:** 단일 파일(`app/(onboarding)/select-line.tsx`) 안에서 처리. 모듈 레벨 순수 헬퍼(인접역 계산, 방면 그룹핑, 상태 라벨/정렬)로 데이터를 가공하고, 컴포넌트는 `useMemo`로 탭을 만들어 렌더한다. SVG/히트존/`getTrainsByStation`/캐시/`useJourney`/`handleNext`는 그대로 둔다.
+
+**Tech Stack:** React Native, Expo Router, TypeScript(strict). 테스트 러너 없음 → 검증은 `npx tsc --noEmit` + `npx expo lint` + 수동 확인.
+
+> **TDD 예외:** 이 레포에는 jest 등 테스트 러너가 없고(`package.json` scripts = start/android/ios/web/lint), 단일 UI 파일 변경에 러너를 새로 도입하는 것은 범위를 벗어난다. 프로젝트 설정이 스킬 기본값보다 우선하므로 단위 테스트 대신 타입체크/린트/수동 검증을 사용한다.
+
+---
+
+## 참고: 검증된 API/데이터 사실
+
+`GET /api/v1/subway/stations/{stationId}/trains` → `{ trains: [{ id, trainNo, direction("내선"/"외선"/지선 상·하행), terminalStationName, nextStationName, trainStatus, trainStatusCode(0~5,99), isExpress, isLastTrain }] }`. 응답에 방면 메타데이터는 trains 배열 밖에 없다. 열차가 있을 때 `nextStationName`은 선택역의 인접역과 일치한다(서울대입구 내선 → 낙성대). 따라서 탭 라벨은 `subway.ts`의 인접역으로 만들고, 열차 그룹은 `direction`으로 묶은 뒤 `nextStationName`으로 해당 인접역 탭에 배치한다.
+
+## 파일 구조
+
+- 수정: `app/(onboarding)/select-line.tsx` (유일한 변경 파일)
+  - 상단 import 보강
+  - 모듈 레벨: 상태 라벨/정렬/방면순서 상수, `DirectionTab` 타입, `getNeighbors`, `trainStatusLabel`, `statusProximity`, `buildDirectionTabs`
+  - 컴포넌트: `selectedDirectionKey` state, `tabs` useMemo, 기본 탭 선택 effect, `selectedTab` 파생값
+  - `BottomSheet` children 전체 교체
+
+---
+
+### Task 1: 데이터 레이어 (import · 헬퍼 · 상수)
+
+**Files:**
+- Modify: `app/(onboarding)/select-line.tsx`
+
+- [ ] **Step 1: import 문 교체**
+
+`select-line.tsx` 최상단 import 블록에서 react import와 subway import를 아래로 교체한다. (`STATION_BY_ID`는 더 이상 쓰지 않으므로 제거, `LINE_2_STATIONS` 추가, `useEffect`/`useMemo` 추가.)
+
+```tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,9 +47,28 @@ import { LINE_2_ID, LINE_2_STATIONS, STATION_BY_NAME } from '../../src/constants
 import { getTrainsByStation, GetTrainsByStationResponse } from '../../src/api/generated';
 import { ApiError } from '../../src/api/client';
 import Line2Svg from '../../assets/icons/line_2.svg';
+```
 
-type Train = NonNullable<GetTrainsByStationResponse['trains']>[number];
+- [ ] **Step 2: 기존 `TRAIN_STATUS_LABEL` 블록을 상수 + 헬퍼 묶음으로 교체**
 
+현재 파일의 아래 블록(주석 `// 서울 공공 API arvlCd 매핑 ...` 포함, `TRAIN_STATUS_LABEL` 객체 정의 전체)을 다음으로 교체한다. `type Train = ...` 줄은 그대로 두고, 그 아래에 위치시킨다.
+
+기존:
+```tsx
+// 서울 공공 API arvlCd 매핑 (백엔드 trainStatus가 그대로 받아옴)
+const TRAIN_STATUS_LABEL: Record<number, string> = {
+  0: '당역 접근',
+  1: '당역 도착',
+  2: '출발',
+  3: '전역 출발',
+  4: '전역 진입',
+  5: '전역 도착',
+  99: '운행중',
+};
+```
+
+교체:
+```tsx
 // trainStatusCode → 표시 라벨 (0진입 1도착 2출발 3전역출발 4전역진입 5전역도착 99운행중)
 const TRAIN_STATUS_LABEL: Record<number, string> = {
   0: '당역 접근',
@@ -115,117 +172,42 @@ function buildDirectionTabs(stationName: string, trains: Train[]): DirectionTab[
   tabs.sort((a, b) => orderIndex(a.neighborName) - orderIndex(b.neighborName));
   return tabs.slice(0, 2);
 }
+```
 
-// 같은 역을 짧은 시간에 다시 탭해도 다시 호출하지 않도록 모듈 레벨 캐시 (1분 TTL)
-const TRAINS_CACHE_TTL_MS = 60_000;
-const trainsByStationCache = new Map<string, { trains: Train[]; ts: number }>();
+- [ ] **Step 3: 타입체크**
 
-const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
-const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
+Run: `npx tsc --noEmit`
+Expected: 통과 (이 시점엔 새 헬퍼가 아직 미사용일 수 있으나 strict에 noUnusedLocals 미설정이라 에러 없음). 만약 `STATION_BY_ID` 제거로 인한 "사용되지 않음"이 아닌 "정의되지 않음" 에러가 나면, 다음 Task에서 해당 참조를 제거하므로 Task 3까지 마친 뒤 재확인.
 
-type Station = { cx: number; cy: number; name: string };
-const STATIONS: Station[] = [
-  { cx: 909.5, cy: 33.3, name: '용두' },
-  { cx: 869, cy: 41, name: '신설동' },
-  { cx: 997.5, cy: 56, name: '신답' },
-  { cx: 343.5, cy: 109, name: '이대' },
-  { cx: 385.5, cy: 109, name: '아현' },
-  { cx: 533, cy: 109, name: '을지로입구' },
-  { cx: 838, cy: 109, name: '상왕십리' },
-  { cx: 432, cy: 112, name: '충정로' },
-  { cx: 480, cy: 112, name: '시청' },
-  { cx: 586, cy: 112, name: '을지로3가' },
-  { cx: 644, cy: 112, name: '을지로4가' },
-  { cx: 714, cy: 112, name: '동대문역사문화공원' },
-  { cx: 779, cy: 112, name: '신당' },
-  { cx: 889, cy: 112, name: '왕십리' },
-  { cx: 310.5, cy: 122, name: '신촌' },
-  { cx: 938.5, cy: 123, name: '한양대' },
-  { cx: 997.5, cy: 135, name: '용답' },
-  { cx: 282, cy: 149, name: '홍대입구' },
-  { cx: 966.5, cy: 150, name: '뚝섬' },
-  { cx: 95, cy: 171, name: '까치산' },
-  { cx: 994, cy: 182, name: '성수' },
-  { cx: 248, cy: 186, name: '합정' },
-  { cx: 994, cy: 228, name: '건대입구' },
-  { cx: 247, cy: 236, name: '당산' },
-  { cx: 104.5, cy: 251, name: '신정네거리' },
-  { cx: 997.5, cy: 264, name: '구의' },
-  { cx: 152.5, cy: 299, name: '양천구청' },
-  { cx: 997.5, cy: 300, name: '강변' },
-  { cx: 247, cy: 305, name: '영등포구청' },
-  { cx: 997.5, cy: 340, name: '잠실나루' },
-  { cx: 251.5, cy: 347, name: '문래' },
-  { cx: 201.5, cy: 349, name: '도림천' },
-  { cx: 994, cy: 384, name: '잠실' },
-  { cx: 247, cy: 398, name: '신도림' },
-  { cx: 997.5, cy: 417, name: '잠실새내' },
-  { cx: 994, cy: 466, name: '종합운동장' },
-  { cx: 247, cy: 467, name: '대림' },
-  { cx: 959.5, cy: 501, name: '삼성' },
-  { cx: 290.5, cy: 504, name: '구로디지털단지' },
-  { cx: 367.5, cy: 537, name: '신대방' },
-  { cx: 473.5, cy: 537, name: '봉천' },
-  { cx: 525.5, cy: 537, name: '서울대입구' },
-  { cx: 582.5, cy: 537, name: '낙성대' },
-  { cx: 669.5, cy: 537, name: '방배' },
-  { cx: 713.5, cy: 537, name: '서초' },
-  { cx: 865.5, cy: 537, name: '역삼' },
-  { cx: 422, cy: 540, name: '신림' },
-  { cx: 620, cy: 540, name: '사당' },
-  { cx: 755, cy: 540, name: '교대' },
-  { cx: 821, cy: 540, name: '강남' },
-  { cx: 898, cy: 540, name: '선릉' },
-];
+---
 
-const HIT_W = 50;
-const HIT_H = 50;
+### Task 2: 컴포넌트 상태/파생값
 
-export default function SelectLineScreen() {
-  const router = useRouter();
-  const { setLine, setTrainId } = useJourney();
-  const [contentHeight, setContentHeight] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(false);
+**Files:**
+- Modify: `app/(onboarding)/select-line.tsx`
+
+- [ ] **Step 1: state에 `selectedDirectionKey` 추가**
+
+`SelectLineScreen` 컴포넌트 내 기존 useState 묶음에 한 줄 추가한다.
+
+기존:
+```tsx
+  const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
+  const [tappedStation, setTappedStation] = useState<string | null>(null);
+```
+
+교체:
+```tsx
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
   const [selectedDirectionKey, setSelectedDirectionKey] = useState<string | null>(null);
   const [tappedStation, setTappedStation] = useState<string | null>(null);
-  const [trains, setTrains] = useState<Train[]>([]);
-  const [loadingTrains, setLoadingTrains] = useState(false);
+```
 
-  const handleStationTap = async (name: string) => {
-    const station = STATION_BY_NAME[name];
-    setTappedStation(name);
-    setSelectedTrain(null);
-    setSheetOpen(true);
-    if (!station) {
-      setTrains([]);
-      return;
-    }
+- [ ] **Step 2: 탭 파생값 + 기본 선택 effect 추가**
 
-    const cached = trainsByStationCache.get(station.id);
-    if (cached && Date.now() - cached.ts < TRAINS_CACHE_TTL_MS) {
-      setTrains(cached.trains);
-      setLoadingTrains(false);
-      return;
-    }
+`handleNext` 함수 정의 바로 위(또는 `const svgWidth = ...` 위)에 다음을 추가한다.
 
-    setTrains([]);
-    setLoadingTrains(true);
-    try {
-      const res = await getTrainsByStation(station.id);
-      const trains = res.trains ?? [];
-      trainsByStationCache.set(station.id, { trains, ts: Date.now() });
-      setTrains(trains);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        Alert.alert('열차 정보를 불러오지 못했어요', err.message);
-      }
-      setSheetOpen(false);
-    } finally {
-      setLoadingTrains(false);
-    }
-  };
-
+```tsx
   const tabs = useMemo(
     () => (tappedStation ? buildDirectionTabs(tappedStation, trains) : []),
     [tappedStation, trains],
@@ -242,60 +224,25 @@ export default function SelectLineScreen() {
   }, [tabs]);
 
   const selectedTab = tabs.find((t) => t.key === selectedDirectionKey) ?? tabs[0] ?? null;
+```
 
-  const handleNext = () => {
-    if (!selectedTrain) return;
-    setLine(LINE_2_ID);
-    setTrainId(selectedTrain);
-    setSheetOpen(false);
-    router.push('/(onboarding)/select-station' as any);
-  };
+- [ ] **Step 3: 타입체크**
 
-  const svgWidth = contentHeight * SVG_ASPECT;
+Run: `npx tsc --noEmit`
+Expected: 통과. (이 시점에 기존 render의 `STATION_BY_ID` 참조가 남아 있으면 "Cannot find name 'STATION_BY_ID'" 에러가 날 수 있다 → Task 3에서 해당 render를 통째로 교체하며 제거됨. Task 3 후 최종 확인.)
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 32, paddingBottom: 16 }}>
-        <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600' }}>
-          현재 타고 있는 열차를 선택해주세요.
-        </Text>
-      </View>
+---
 
-      <View style={{ flex: 1, paddingBottom: 60 }}>
-        <View
-          style={{ flex: 1 }}
-          onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
-        >
-          {contentHeight > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ alignItems: 'center' }}
-            >
-              <View style={{ width: svgWidth, height: contentHeight }}>
-                <Line2Svg
-                  width={svgWidth}
-                  height={contentHeight}
-                  viewBox={`${SVG_VIEWBOX.x} ${SVG_VIEWBOX.y} ${SVG_VIEWBOX.w} ${SVG_VIEWBOX.h}`}
-                />
-                {STATIONS.map((s, i) => {
-                  const scale = contentHeight / SVG_VIEWBOX.h;
-                  const x = s.cx * scale - HIT_W / 2;
-                  const y = s.cy * scale - HIT_H / 2;
-                  return (
-                    <Pressable
-                      key={i}
-                      onPress={() => handleStationTap(s.name)}
-                      style={{ position: 'absolute', left: x, top: y, width: HIT_W, height: HIT_H }}
-                    />
-                  );
-                })}
-              </View>
-            </ScrollView>
-          )}
-        </View>
-      </View>
+### Task 3: 바텀시트 렌더 교체
 
+**Files:**
+- Modify: `app/(onboarding)/select-line.tsx`
+
+- [ ] **Step 1: `<BottomSheet> ... </BottomSheet>` 블록 전체 교체**
+
+현재 파일의 `<BottomSheet open={sheetOpen} ...>` 부터 닫는 `</BottomSheet>` 까지(약 188~280행) 전체를 아래로 교체한다.
+
+```tsx
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)}>
         {tappedStation && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
@@ -446,6 +393,40 @@ export default function SelectLineScreen() {
           </>
         )}
       </BottomSheet>
-    </View>
-  );
-}
+```
+
+- [ ] **Step 2: 최종 타입체크**
+
+Run: `npx tsc --noEmit`
+Expected: PASS (에러 없음). `STATION_BY_ID` 미정의/미사용 에러가 없어야 한다.
+
+- [ ] **Step 3: 린트**
+
+Run: `npx expo lint`
+Expected: 신규 에러 없음.
+
+---
+
+### Task 4: 수동 검증 & 커밋
+
+**Files:**
+- Modify: `app/(onboarding)/select-line.tsx`
+
+- [ ] **Step 1: 앱 실행 후 3케이스 확인**
+
+`npx expo start` → "현재 타고 있는 열차를 선택해주세요" 화면에서 역(예: 서울대입구) 탭.
+- 양 방면 모두 열차: 탭 2개(예: 봉천 방향 / 낙성대 방향), 각 방면 열차가 상태 라벨로 나열, 가까운 순. `다음`은 미선택 시 비활성.
+- 한 방면만 열차: 빈 방면 탭 선택 시 "도착 예정이거나 ..." 문구 + `닫기`. 열차 있는 방면이 기본 선택됨.
+- 양쪽 다 열차 0대: 두 빈 탭(인접역 이름) 또는(인접역 못 구하면) 단일 빈 상태 + `닫기`.
+- 탭 전환 시 선택 해제 + `다음` 비활성 복귀.
+
+- [ ] **Step 2: 커밋**
+
+```bash
+git add "app/(onboarding)/select-line.tsx" docs/superpowers/plans/2026-06-04-train-direction-bottomsheet.md
+git commit -m "feat: 열차 선택 바텀시트 방면 탭 UI 추가
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
+```
+
+> 주의: 작업 트리에 기존 변경(`CLAUDE.md`, `getting-off-status.tsx`, `withdraw.tsx`)이 있다. 위 `git add`는 해당 두 파일만 명시적으로 스테이징하므로 기존 변경은 건드리지 않는다.
