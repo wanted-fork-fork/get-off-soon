@@ -186,7 +186,6 @@ export default function MyPageScreen() {
               </Text>
             }
           />
-          <MenuRow icon={ICONS.ads} label="광고 시청하고 1 리워드 얻기" />
         </View>
 
         {/* 고객지원 */}
@@ -201,7 +200,6 @@ export default function MyPageScreen() {
           <SectionTitle>약관 및 정책</SectionTitle>
           <MenuRow icon={ICONS.terms} label="서비스 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.terms)} />
           <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
-          <MenuRow icon={ICONS.geo} label="위치정보 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.geo)} />
         </View>
 
         {/* 로그아웃 / 회원 탈퇴 — 로그인 상태에서만 노출 */}
