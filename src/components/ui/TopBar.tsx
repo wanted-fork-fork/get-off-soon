@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '../../constants/theme';
 import ArrowLeftIcon from '../../../assets/icons/ArrowLeft.svg';
+
+const LOGO_HEIGHT = 24;
+const LOGO_WIDTH = (312 / 72) * LOGO_HEIGHT; // 원본 비율 312×72 유지
 
 interface TopBarProps {
   variant?: 'home' | 'back' | 'back-action';
@@ -32,9 +35,11 @@ export function TopBar({ variant = 'home', onBack, rightAction, title }: TopBarP
       style={{ backgroundColor: colors.surface.DEFAULT, paddingHorizontal: 16, height: 59, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
     >
       {variant === 'home' ? (
-        <Text style={{ color: colors.fg.DEFAULT, fontSize: 24, fontWeight: '800', fontFamily: 'Paperlogy-ExtraBold', lineHeight: 24, letterSpacing: 24 * -0.015, textAlignVertical: 'center' }}>
-          곧 내려요
-        </Text>
+        <Image
+          source={require('../../../assets/images/logo.png')}
+          style={{ width: LOGO_WIDTH, height: LOGO_HEIGHT }}
+          resizeMode="contain"
+        />
       ) : (
         <TouchableOpacity
           onPress={handleBack}
