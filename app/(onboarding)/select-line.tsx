@@ -213,6 +213,11 @@ export default function SelectLineScreen() {
     setLoadingTrains(true);
     try {
       const res = await getTrainsByStation(station.id);
+      console.log(
+        `[select-line] getTrainsByStation(${station.id} / ${name})`,
+        'trains.length =', res.trains?.length ?? 0,
+        '\nraw response =', JSON.stringify(res, null, 2),
+      );
       const trains = res.trains ?? [];
       trainsByStationCache.set(station.id, { trains, ts: Date.now() });
       setTrains(trains);
@@ -374,17 +379,19 @@ export default function SelectLineScreen() {
 
             {selectedTab.trains.length === 0 ? (
               <View>
-                <Text
-                  style={{
-                    color: colors.fg.secondary,
-                    fontSize: 14,
-                    lineHeight: 21,
-                    textAlign: 'center',
-                    paddingVertical: 28,
-                  }}
-                >
-                  도착 예정이거나 도착한 열차가 없습니다.{'\n'}열차가 역에 있을 때 다시 시도해주세요.
-                </Text>
+                <View style={{ minHeight: 184, justifyContent: 'center' }}>
+                  <Text
+                    style={{
+                      color: colors.fg.secondary,
+                      fontSize: 14,
+                      lineHeight: 21,
+                      textAlign: 'center',
+                      paddingVertical: 28,
+                    }}
+                  >
+                    도착 예정이거나 도착한 열차가 없습니다.{'\n'}열차가 역에 있을 때 다시 시도해주세요.
+                  </Text>
+                </View>
                 <Button label="닫기" onPress={() => setSheetOpen(false)} />
               </View>
             ) : (
