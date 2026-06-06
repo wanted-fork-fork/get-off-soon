@@ -124,8 +124,7 @@ export default function HomeScreen() {
           if (state.carNumbers.length === 0 && requestRes.carriages) {
             requestRes.carriages.forEach((n) => toggleCar(n));
           }
-          if (!didAutoRedirect) {
-            didAutoRedirect = true;
+          if (isColdStart) {
             router.replace('/seat-seekers' as any);
             return;
           }
@@ -202,16 +201,13 @@ export default function HomeScreen() {
     bottom: 40,
     left: 16,
     right: 16,
+    height: 80,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    backgroundColor: '#101114',
-    borderWidth: 1,
-    borderColor: '#454A54',
-    borderRadius: 99,
-    paddingVertical: 16,
-    paddingLeft: 32,
-    paddingRight: 32,
-    gap: 24,
+    backgroundColor: '#2D3239',
+    borderRadius: 12,
+    padding: 20,
+    gap: 8,
   };
 
   const renderPill = () => {
@@ -301,6 +297,7 @@ export default function HomeScreen() {
             bottom: 40,
             left: 16,
             right: 16,
+            height: 80,
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: '#2D3239',
