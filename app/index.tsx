@@ -1,22 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
 import { RoleCard } from '../src/components/ui/RoleCard';
-import { getMySeatShare, getMySeatRequest, getMe, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted, getTrainsByLine } from '../src/api/generated';
+import { WelcomeOverlay } from '../src/components/ui/WelcomeOverlay';
+import { getMySeatShare, getMySeatRequest, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted, getTrainsByLine, getRewards } from '../src/api/generated';
+import CoinIcon from '../assets/icons/Coin.svg';
 import type { GetMySeatShareResponse, GetMySeatRequestResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 import { LINE_2_ID, LINE_2_STATIONS, STATION_BY_ID, STATION_BY_NAME } from '../src/constants/subway';
 import { SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
-
-const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
-function isSocialProvider(provider: string | undefined | null): boolean {
-  if (!provider) return false;
-  return !GUEST_PROVIDERS.has(provider.toLowerCase());
-}
 
 type ActiveShare = NonNullable<GetMySeatShareResponse>;
 type ActiveRequest = GetMySeatRequestResponse;
@@ -70,15 +66,36 @@ export default function HomeScreen() {
   const [activeShare, setActiveShare] = useState<ActiveShare | null>(null);
   const [activeRequest, setActiveRequest] = useState<ActiveRequest | null>(null);
   const [loadingActive, setLoadingActive] = useState(true);
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [endedBanner, setEndedBanner] = useState<{ board: string; getOff: string } | null>(null);
   const [etaText, setEtaText] = useState<string | null>(null);
+  const [welcomeVisible, setWelcomeVisible] = useState(false);
+  const [rewardPoints, setRewardPoints] = useState<number | null>(null);
 
-  useEffect(() => {
-    getMe()
-      .then((me) => setLoggedIn(isSocialProvider(me.provider)))
-      .catch(() => setLoggedIn(false));
-  }, []);
+  // 메인 진입/복귀 시마다 보유 리워드 수를 갱신한다.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await getRewards();
+          if (!cancelled) setRewardPoints(res.rewardPoints ?? 0);
+        } catch (e) {
+          if (e instanceof ApiError) return;
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  // TODO: 임시 — 테스트를 위해 메인 진입 시마다 환영 오버레이를 띄운다.
+  // 추후 AsyncStorage 플래그로 "앱 최초 실행 1회"에만 노출하도록 변경.
+  useFocusEffect(
+    useCallback(() => {
+      setWelcomeVisible(true);
+    }, []),
+  );
 
   useEffect(() => {
     // 최초 홈 진입(cold start)인지 동기적으로 확정한다. 이후 홈 재진입은 warm으로 간주.
@@ -288,41 +305,6 @@ export default function HomeScreen() {
       );
     }
 
-    if (loggedIn === false) {
-      return (
-        <Pressable
-          onPress={() => router.push('/login' as any)}
-          style={{
-            position: 'absolute',
-            bottom: 40,
-            left: 16,
-            right: 16,
-            height: 80,
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: '#2D3239',
-            borderRadius: 12,
-            padding: 20,
-            gap: 8,
-          }}
-        >
-          <View style={{ flex: 1, gap: 8 }}>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 14, fontWeight: '600', letterSpacing: 14 * -0.015 }}>
-              회원 가입 시 2 리워드 지급!
-            </Text>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', letterSpacing: 18 * -0.015 }}>
-              로그인하고 두 번 더 앉아가세요.
-            </Text>
-          </View>
-          <Image
-            source={require('../assets/images/check_badge.png')}
-            style={{ width: 48, height: 48 }}
-            resizeMode="contain"
-          />
-        </Pressable>
-      );
-    }
-
     return null;
   };
 
@@ -330,6 +312,38 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
       <TopBar variant="home" />
       <ScrollView style={{ flex: 1, paddingHorizontal: 16 }} contentContainerStyle={{ paddingTop: 32, gap: 12 }}>
+        <Pressable
+          onPress={() => router.push('/reward-history' as any)}
+          style={{
+            alignSelf: 'flex-end',
+            height: 32,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            backgroundColor: '#363C44',
+            borderRadius: 8,
+            paddingTop: 4,
+            paddingBottom: 4,
+            paddingLeft: 6,
+            paddingRight: 12,
+          }}
+        >
+          <CoinIcon width={24} height={24} />
+          <Text
+            style={{
+              color: '#E4E5E7',
+              fontSize: 16,
+              fontWeight: '600',
+              lineHeight: 16,
+              letterSpacing: 16 * -0.015,
+              includeFontPadding: false,
+              textAlignVertical: 'center',
+            }}
+          >
+            {rewardPoints ?? 0}
+          </Text>
+        </Pressable>
+
         <View style={{ gap: 12 }}>
           <RoleCard
             title="곧 내려요"
@@ -351,6 +365,8 @@ export default function HomeScreen() {
       </ScrollView>
 
       {renderPill()}
+
+      <WelcomeOverlay visible={welcomeVisible} onConfirm={() => setWelcomeVisible(false)} />
     </SafeAreaView>
   );
 }
