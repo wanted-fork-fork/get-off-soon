@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Line, Rect } from 'react-native-svg';
 import { colors } from '../src/constants/theme';
 import { TopBar } from '../src/components/ui/TopBar';
+import QuestionIcon from '../assets/icons/Question.svg';
 import { getRewards, GetRewardsResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 
@@ -142,7 +143,20 @@ export default function RewardHistoryScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface.DEFAULT }} edges={['top']}>
-      <TopBar variant="back" onBack={() => router.back()} title="리워드 내역" />
+      <TopBar
+        variant="back-action"
+        onBack={() => router.back()}
+        title="리워드 내역"
+        rightAction={
+          <TouchableOpacity
+            onPress={() => router.push('/reward-guide' as any)}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <QuestionIcon width={24} height={24} />
+          </TouchableOpacity>
+        }
+      />
 
       {/* 보유 리워드 헤더 */}
       <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 }}>
