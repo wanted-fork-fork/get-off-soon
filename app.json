@@ -8,6 +8,12 @@
     "scheme": "getoffsoon",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/590eadec-cdfd-4571-b1de-abdee71df1af"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.forkfork.tagotago",
