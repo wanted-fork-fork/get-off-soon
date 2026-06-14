@@ -162,10 +162,6 @@ export default function MyPageScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
-        {loggedIn === false && (
-          <LoginBanner onPress={() => router.push('/login' as any)} />
-        )}
-
         {loggedIn === true && me && (
           <UserProfileBanner
             label={(me as any).email ?? me.name ?? '회원'}
@@ -275,62 +271,6 @@ function UserProfileBanner({ label, rewardPoints }: { label: string; rewardPoint
       >
         <BrandKakao width={20} height={20} />
       </View>
-    </View>
-  );
-}
-
-function LoginBanner({ onPress }: { onPress: () => void }) {
-  return (
-    <View
-      style={{
-        backgroundColor: colors.surface.card,
-        borderRadius: 14,
-        paddingHorizontal: 18,
-        paddingVertical: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 32,
-      }}
-    >
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            color: colors.fg.DEFAULT,
-            fontSize: 16,
-            fontWeight: '600',
-            lineHeight: 16 * 1.3,
-            letterSpacing: 16 * -0.015,
-          }}
-        >
-          로그인하고 편히 앉아가세요.
-        </Text>
-        <Text
-          style={{
-            color: colors.fg.muted,
-            fontSize: 13,
-            fontWeight: '400',
-            marginTop: 6,
-            letterSpacing: 13 * -0.015,
-          }}
-        >
-          가입 시 2 리워드 즉시 적립
-        </Text>
-      </View>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onPress}
-        style={{
-          marginLeft: 12,
-          backgroundColor: colors.accent.blue,
-          borderRadius: 8,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-        }}
-      >
-        <Text style={{ color: colors.fg.onAccent, fontSize: 13, fontWeight: '600', letterSpacing: 13 * -0.015 }}>
-          로그인
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 }

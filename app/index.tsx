@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../src/constants/theme';
 import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
@@ -21,6 +22,8 @@ type ActiveRequest = GetMySeatRequestResponse;
 // 앱이 이미 켜져 있는 상태(여정 페이지에서 홈으로 복귀 등)에서는 자동 이동하지 않는다.
 // JS 런타임은 cold start에서만 새로 뜨므로, 모듈 전역 플래그로 "최초 진입 1회"를 판별한다.
 let didInitialRouting = false;
+
+const ONBOARDING_SEEN_KEY = 'onboarding.welcomeSeen';
 
 const JOURNEY_IN_PROGRESS_TEXT = '여정 중에는\n자리 정보 등록을 할 수 없어요.';
 
@@ -89,13 +92,23 @@ export default function HomeScreen() {
     }, []),
   );
 
-  // TODO: 임시 — 테스트를 위해 메인 진입 시마다 환영 오버레이를 띄운다.
-  // 추후 AsyncStorage 플래그로 "앱 최초 실행 1회"에만 노출하도록 변경.
-  useFocusEffect(
-    useCallback(() => {
-      setWelcomeVisible(true);
-    }, []),
-  );
+  // 온보딩 환영 오버레이는 한 번도 본 적 없는 유저에게만 1회 노출한다.
+  useEffect(() => {
+    (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(ONBOARDING_SEEN_KEY);
+        if (!seen) setWelcomeVisible(true);
+      } catch {
+        // 저장소 접근 실패 시 노출하지 않는다.
+      }
+    })();
+  }, []);
+
+  const handleWelcomeConfirm = useCallback(() => {
+    setWelcomeVisible(false);
+    // 본 것으로 기록 — 이후 다시 노출되지 않는다.
+    AsyncStorage.setItem(ONBOARDING_SEEN_KEY, '1').catch(() => {});
+  }, []);
 
   useEffect(() => {
     // 최초 홈 진입(cold start)인지 동기적으로 확정한다. 이후 홈 재진입은 warm으로 간주.
@@ -366,7 +379,7 @@ export default function HomeScreen() {
 
       {renderPill()}
 
-      <WelcomeOverlay visible={welcomeVisible} onConfirm={() => setWelcomeVisible(false)} />
+      <WelcomeOverlay visible={welcomeVisible} onConfirm={handleWelcomeConfirm} />
     </SafeAreaView>
   );
 }
