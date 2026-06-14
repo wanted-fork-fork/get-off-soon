@@ -36,6 +36,24 @@ export type SocialLoginResponse = {
   };
 };
 
+export type CreateAuthGuestRequest = {
+  deviceId: string;
+  timestamp: number;
+  signature: string;
+  name?: string;
+};
+
+export type CreateAuthGuestResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+  user?: {
+    id?: string;
+    name?: string;
+    rewardPoints?: number;
+    role?: string;
+  };
+};
+
 export type RefreshTokenRequest = {
   refreshToken: string;
 };
@@ -72,6 +90,10 @@ export type UpdateFcmTokenRequest = {
 
 export type UpdateFcmTokenResponse = {
   fcmToken?: string;
+};
+
+export type GetUsersMeRewardPointsResponse = {
+  rewardPoints?: number;
 };
 
 export type GetRewardsResponse = {
@@ -348,12 +370,12 @@ export type GetViewedSharesResponse = {
 
 /** 개발용 Mock 로그인 */
 export async function devLogin(body: DevLoginRequest): Promise<DevLoginResponse> {
-  return apiFetch('/api/v1/auth/login/dev', { method: 'POST', body });
+  return apiFetch('/api/v1/auth/login/dev', { method: 'POST', body, auth: true });
 }
 
 /** 카카오 OAuth 시작 */
 export async function kakaoAuthorize(): Promise<void> {
-  return apiFetch('/api/v1/auth/kakao/authorize', { method: 'GET' });
+  return apiFetch('/api/v1/auth/kakao/authorize', { method: 'GET', auth: true });
 }
 
 /** 카카오 OAuth 콜백 */
@@ -362,17 +384,22 @@ export async function kakaoCallback(query: { code: string }): Promise<void> {
   const searchParams = new URLSearchParams();
   searchParams.set('code', String(query.code));
   const qs = searchParams.toString();
-  return apiFetch(`/api/v1/auth/kakao/callback${qs ? `?${qs}` : ''}`, { method: 'GET' });
+  return apiFetch(`/api/v1/auth/kakao/callback${qs ? `?${qs}` : ''}`, { method: 'GET', auth: true });
 }
 
 /** 소셜 로그인 */
 export async function socialLogin(provider: string, body: SocialLoginRequest): Promise<SocialLoginResponse> {
-  return apiFetch(`/api/v1/auth/login/${provider}`, { method: 'POST', body });
+  return apiFetch(`/api/v1/auth/login/${provider}`, { method: 'POST', body, auth: true });
+}
+
+/** 비회원(게스트) 로그인 */
+export async function createAuthGuest(body: CreateAuthGuestRequest): Promise<CreateAuthGuestResponse> {
+  return apiFetch('/api/v1/auth/guest', { method: 'POST', body, auth: true });
 }
 
 /** 토큰 갱신 */
 export async function refreshToken(body: RefreshTokenRequest): Promise<RefreshTokenResponse> {
-  return apiFetch('/api/v1/auth/refresh', { method: 'POST', body });
+  return apiFetch('/api/v1/auth/refresh', { method: 'POST', body, auth: true });
 }
 
 /** 로그아웃 */
@@ -400,6 +427,11 @@ export async function updateFcmToken(body: UpdateFcmTokenRequest): Promise<Updat
   return apiFetch('/api/v1/users/me/fcm-token', { method: 'PUT', body, auth: true });
 }
 
+/** 리워드 포인트 잔액 조회 */
+export async function getUsersMeRewardPoints(): Promise<GetUsersMeRewardPointsResponse> {
+  return apiFetch('/api/v1/users/me/reward-points', { method: 'GET', auth: true });
+}
+
 /** 리워드 내역 조회 */
 export async function getRewards(): Promise<GetRewardsResponse> {
   return apiFetch('/api/v1/users/me/rewards', { method: 'GET', auth: true });
@@ -417,27 +449,27 @@ export async function claimAdReward(): Promise<ClaimAdRewardResponse> {
 
 /** 노선 목록 조회 */
 export async function getSubwayLines(): Promise<GetSubwayLinesResponse> {
-  return apiFetch('/api/v1/subway/lines', { method: 'GET' });
+  return apiFetch('/api/v1/subway/lines', { method: 'GET', auth: true });
 }
 
 /** 노선별 운행 열차 목록 조회 */
 export async function getTrainsByLine(lineId: string): Promise<GetTrainsByLineResponse> {
-  return apiFetch(`/api/v1/subway/lines/${lineId}/trains`, { method: 'GET' });
+  return apiFetch(`/api/v1/subway/lines/${lineId}/trains`, { method: 'GET', auth: true });
 }
 
 /** 노선별 역 목록 조회 */
 export async function getStationsByLine(lineId: string): Promise<GetStationsByLineResponse> {
-  return apiFetch(`/api/v1/subway/lines/${lineId}/stations`, { method: 'GET' });
+  return apiFetch(`/api/v1/subway/lines/${lineId}/stations`, { method: 'GET', auth: true });
 }
 
 /** [디버그] 노선별 운행 열차 상세 조회 */
 export async function getTrainsDebug(lineId: string): Promise<GetTrainsDebugResponse> {
-  return apiFetch(`/api/v1/subway/lines/${lineId}/trains/debug`, { method: 'GET' });
+  return apiFetch(`/api/v1/subway/lines/${lineId}/trains/debug`, { method: 'GET', auth: true });
 }
 
 /** 역별 열차 목록 조회 */
 export async function getTrainsByStation(stationId: string): Promise<GetTrainsByStationResponse> {
-  return apiFetch(`/api/v1/subway/stations/${stationId}/trains`, { method: 'GET' });
+  return apiFetch(`/api/v1/subway/stations/${stationId}/trains`, { method: 'GET', auth: true });
 }
 
 /** 자리 공유 등록 */

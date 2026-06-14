@@ -126,7 +126,7 @@ function buildFunctionName(method, path) {
 }
 
 // ─── 엔드포인트 정보 추출 ──────────────────────────────────────
-function extractEndpoint(path, method, spec) {
+function extractEndpoint(path, method, spec, globalSecurity) {
   const pathParams = [];
   const queryParams = [];
 
@@ -156,7 +156,11 @@ function extractEndpoint(path, method, spec) {
     }
   }
 
-  const needsAuth = !!(spec.security && spec.security.length > 0);
+  // OpenAPI: operation-level security가 있으면 그것을 사용(빈 배열 = 인증 없음),
+  // 없으면 전역(global) security를 상속한다.
+  const effectiveSecurity =
+    spec.security !== undefined ? spec.security : globalSecurity;
+  const needsAuth = !!(effectiveSecurity && effectiveSecurity.length > 0);
   const noContent = successCodes.includes("204") && !responseSchema;
 
   return {
@@ -356,9 +360,10 @@ async function tryRefresh(): Promise<string | null> {
 }
 
 export async function apiFetch<T>(path: string, options: FetchOptions): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  if (options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (options.auth && tokenStore) {
     const token = await tokenStore.getAccessToken();
@@ -429,7 +434,7 @@ async function main() {
       const tags = spec.tags || [];
       if (tags.some((t) => SKIP_TAGS.includes(t))) continue;
 
-      const ep = extractEndpoint(path, method, spec);
+      const ep = extractEndpoint(path, method, spec, swagger.security);
       endpoints.push(ep);
       console.log(`  ${ep.method.padEnd(6)} ${ep.path} → ${ep.functionName}()`);
     }
