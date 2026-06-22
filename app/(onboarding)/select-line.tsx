@@ -10,7 +10,8 @@ import { getTrainsByStation, GetTrainsByStationResponse } from '../../src/api/ge
 import { ApiError } from '../../src/api/client';
 import Line2Svg from '../../assets/icons/line_2.svg';
 
-type Train = NonNullable<GetTrainsByStationResponse['trains']>[number];
+type Connection = NonNullable<GetTrainsByStationResponse['connections']>[number];
+type Train = NonNullable<Connection['trains']>[number];
 
 // trainStatusCode → 표시 라벨 (0진입 1도착 2출발 3전역출발 4전역진입 5전역도착 99운행중)
 const TRAIN_STATUS_LABEL: Record<number, string> = {
@@ -76,32 +77,22 @@ function getNeighbors(stationName: string): string[] {
   return [nextName, prevName].filter((n): n is string => !!n);
 }
 
-// 열차들을 방면 탭으로 가공. direction으로 그룹핑하고 nextStationName으로 인접역 탭에 배치,
-// 열차 없는 인접역은 빈 탭으로 채운다. 인접역 고정 순서로 정렬해 최대 2개 반환.
-function buildDirectionTabs(stationName: string, trains: Train[]): DirectionTab[] {
+// 연결(다음역)별 connection을 방면 탭으로 가공. 각 connection이 곧 하나의 방면이므로
+// nextStationName으로 탭을 만들고, 열차 없는(hasTrains=false) 방면도 빈 탭으로 그대로 노출한다.
+// 인접역 고정 순서로 정렬해 최대 2개 반환.
+function buildDirectionTabs(stationName: string, connections: Connection[]): DirectionTab[] {
   const neighbors = getNeighbors(stationName);
   const orderIndex = (name: string) => {
     const i = neighbors.indexOf(name);
     return i === -1 ? neighbors.length : i;
   };
 
-  const groups = new Map<string, Train[]>();
-  for (const t of trains) {
-    const key = t.direction ?? '';
-    const arr = groups.get(key);
-    if (arr) arr.push(t);
-    else groups.set(key, [t]);
-  }
-
   const usedNeighbors = new Set<string>();
   const tabs: DirectionTab[] = [];
-  for (const groupTrains of groups.values()) {
-    const matched = groupTrains
-      .map((t) => t.nextStationName ?? '')
-      .find((n) => neighbors.includes(n));
-    const neighborName = matched ?? groupTrains[0]?.nextStationName ?? '';
+  for (const conn of connections) {
+    const neighborName = conn.nextStationName ?? '';
     if (!neighborName) continue;
-    const sorted = [...groupTrains].sort((a, b) => statusProximity(a) - statusProximity(b));
+    const sorted = [...(conn.trains ?? [])].sort((a, b) => statusProximity(a) - statusProximity(b));
     tabs.push({ key: `tab-${neighborName}`, label: `${neighborName} 방향`, neighborName, trains: sorted });
     usedNeighbors.add(neighborName);
   }
@@ -118,7 +109,7 @@ function buildDirectionTabs(stationName: string, trains: Train[]): DirectionTab[
 
 // 같은 역을 짧은 시간에 다시 탭해도 다시 호출하지 않도록 모듈 레벨 캐시 (1분 TTL)
 const TRAINS_CACHE_TTL_MS = 60_000;
-const trainsByStationCache = new Map<string, { trains: Train[]; ts: number }>();
+const trainsByStationCache = new Map<string, { connections: Connection[]; ts: number }>();
 
 const SVG_VIEWBOX = { x: 0, y: 0, w: 1120, h: 588 };
 const SVG_ASPECT = SVG_VIEWBOX.w / SVG_VIEWBOX.h;
@@ -189,7 +180,7 @@ export default function SelectLineScreen() {
   const [selectedTrain, setSelectedTrain] = useState<string | null>(null);
   const [selectedDirectionKey, setSelectedDirectionKey] = useState<string | null>(null);
   const [tappedStation, setTappedStation] = useState<string | null>(null);
-  const [trains, setTrains] = useState<Train[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [loadingTrains, setLoadingTrains] = useState(false);
 
   const handleStationTap = async (name: string) => {
@@ -198,29 +189,29 @@ export default function SelectLineScreen() {
     setSelectedTrain(null);
     setSheetOpen(true);
     if (!station) {
-      setTrains([]);
+      setConnections([]);
       return;
     }
 
     const cached = trainsByStationCache.get(station.id);
     if (cached && Date.now() - cached.ts < TRAINS_CACHE_TTL_MS) {
-      setTrains(cached.trains);
+      setConnections(cached.connections);
       setLoadingTrains(false);
       return;
     }
 
-    setTrains([]);
+    setConnections([]);
     setLoadingTrains(true);
     try {
       const res = await getTrainsByStation(station.id);
       console.log(
         `[select-line] getTrainsByStation(${station.id} / ${name})`,
-        'trains.length =', res.trains?.length ?? 0,
+        'connections.length =', res.connections?.length ?? 0,
         '\nraw response =', JSON.stringify(res, null, 2),
       );
-      const trains = res.trains ?? [];
-      trainsByStationCache.set(station.id, { trains, ts: Date.now() });
-      setTrains(trains);
+      const conns = res.connections ?? [];
+      trainsByStationCache.set(station.id, { connections: conns, ts: Date.now() });
+      setConnections(conns);
     } catch (err) {
       if (err instanceof ApiError) {
         Alert.alert('열차 정보를 불러오지 못했어요', err.message);
@@ -232,8 +223,8 @@ export default function SelectLineScreen() {
   };
 
   const tabs = useMemo(
-    () => (tappedStation ? buildDirectionTabs(tappedStation, trains) : []),
-    [tappedStation, trains],
+    () => (tappedStation ? buildDirectionTabs(tappedStation, connections) : []),
+    [tappedStation, connections],
   );
 
   // 탭이 새로 만들어지면 열차가 있는 방면을 우선 기본 선택

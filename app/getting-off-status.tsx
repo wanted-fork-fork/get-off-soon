@@ -8,7 +8,7 @@ import { getSeatZoneLabel, SEAT_POSITION_TO_ZONE } from '../src/constants/seatZo
 import { STATION_BY_ID, STATION_BY_NAME, LINE_2_STATIONS, LINE_2_ID } from '../src/constants/subway';
 import { Button } from '../src/components/ui/Button';
 import { BottomSheet } from '../src/components/ui/BottomSheet';
-import { getMySeatShare, earlyExitSeatShare, getTrainsByLine } from '../src/api/generated';
+import { getMySeatShare, earlyExitSeatShare, getTrainsByLine, getSeatSharesMeStatus } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
 import CallIcon from '../assets/icons/Call.svg';
 import EmailIcon from '../assets/icons/Email.svg';
@@ -51,7 +51,8 @@ export default function GettingOffStatusScreen() {
   const { state, setTrainId, setStation, toggleCar, setSeatZone, setAppearance, setShareId, reset } = useJourney();
   const [ending, setEnding] = useState(false);
   const [boardStationName, setBoardStationName] = useState<string | null>(null);
-  const [currentStationId, setCurrentStationId] = useState<string | null>(null);
+  // 하차역까지 남은 정류장 수 (status 폴링의 progress.remainingStops). null = 위치 미상
+  const [remainingStops, setRemainingStops] = useState<number | null>(null);
   const [trainNo, setTrainNo] = useState<string | null>(null);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
@@ -89,49 +90,42 @@ export default function GettingOffStatusScreen() {
     })();
   }, []);
 
+  // 신고 문자에 넣을 열차 번호는 1회만 조회한다. (실시간 위치/도착은 status 폴링이 담당)
   useEffect(() => {
-    if (!state.trainId) return;
+    if (!state.trainId || trainNo) return;
     let cancelled = false;
-    const fetchPos = async () => {
+    (async () => {
       try {
         const res = await getTrainsByLine(LINE_2_ID);
         if (cancelled) return;
         const train = res.trains?.find((t) => t.id === state.trainId);
-        if (train?.currentStationId) setCurrentStationId(train.currentStationId);
         if (train?.trainNo) setTrainNo(train.trainNo);
       } catch (err) {
         if (err instanceof ApiError) return;
       }
-    };
-    fetchPos();
-    const id = setInterval(fetchPos, 30_000);
+    })();
     return () => {
       cancelled = true;
-      clearInterval(id);
     };
-  }, [state.trainId]);
+  }, [state.trainId, trainNo]);
 
   const boardStation = boardStationName ? STATION_BY_NAME[boardStationName] : null;
   const getOffStation = state.stationId ? STATION_BY_ID[state.stationId] : null;
-  const currentStation = currentStationId ? STATION_BY_ID[currentStationId] : null;
 
+  // 진행률 바: 서버의 remainingStops 기준. 전체 정거장 수는 로컬 노선 상수로 근사한다.
   let progressPct = 0;
-  let stationsRemaining = 0;
-  if (boardStation && getOffStation) {
+  let stationsRemaining = remainingStops ?? 0;
+  if (remainingStops != null && boardStation && getOffStation) {
     const total = Math.abs(getOffStation.order - boardStation.order);
-    if (currentStation && total > 0) {
-      const direction = getOffStation.order >= boardStation.order ? 1 : -1;
-      const traveled = (currentStation.order - boardStation.order) * direction;
-      progressPct = Math.max(0, Math.min(1, traveled / total));
-      stationsRemaining = Math.max(0, total - Math.max(0, traveled));
-    } else {
-      stationsRemaining = total;
+    if (total > 0) {
+      progressPct = Math.max(0, Math.min(1, 1 - remainingStops / total));
     }
+    stationsRemaining = Math.max(0, remainingStops);
   }
 
   const AVG_MIN_PER_STATION = 2;
   const eta = new Date(Date.now() + stationsRemaining * AVG_MIN_PER_STATION * 60_000);
-  const timeStr = currentStation
+  const timeStr = remainingStops != null
     ? `${String(eta.getHours()).padStart(2, '0')}:${String(eta.getMinutes()).padStart(2, '0')}`
     : '--:--';
 
@@ -144,17 +138,20 @@ export default function GettingOffStatusScreen() {
   const getOffName = getOffStation?.name ?? '도착역';
   const progressPctLabel: `${number}%` = `${Math.round(progressPct * 100)}%`;
 
-  // 공유 상태 폴링 - 완료되면 자동으로 journey-end로 이동
+  // 통합 상태 폴링 - 실시간 위치(남은 정류장) 갱신 + 도착 완료 시 journey-end로 이동
   useEffect(() => {
     if (!state.shareId) return;
     let cancelled = false;
-    const checkShare = async () => {
+    const poll = async () => {
       try {
-        const res = await getMySeatShare();
-        console.log('[getting-off-status] poll getMySeatShare:', JSON.stringify(res, null, 2));
+        const res = await getSeatSharesMeStatus();
+        console.log('[getting-off-status] poll status:', JSON.stringify(res, null, 2));
         if (cancelled) return;
-        const isDone = !res || (res.status != null && res.status !== 'active');
-        if (isDone) {
+        if (res.phase === 'active' && res.progress) {
+          setRemainingStops(res.progress.remainingStops ?? null);
+          if (res.share?.boardStationName) setBoardStationName(res.share.boardStationName);
+        } else if (res.phase === 'completed' || res.phase === 'none') {
+          // completed result는 1회 소비형 — journey-end는 recent-completed(비소비형)로 다시 조회한다.
           reset();
           router.replace({
             pathname: '/journey-end',
@@ -165,12 +162,13 @@ export default function GettingOffStatusScreen() {
         if (err instanceof ApiError) return;
       }
     };
-    const id = setInterval(checkShare, 30_000);
+    poll();
+    const id = setInterval(poll, 30_000);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [state.shareId, boardName, getOffName]);
+  }, [state.shareId]);
 
   const handleEnd = async () => {
     if (ending) return;

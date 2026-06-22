@@ -118,6 +118,7 @@ export type GetRewardsResponse = {
 export type CheckinResponse = {
   rewardPoints?: number;
   checkinDate?: string;
+  rewarded?: boolean;
 };
 
 export type ClaimAdRewardResponse = {
@@ -153,7 +154,11 @@ export type GetStationsByLineResponse = {
     id?: string;
     lineId?: string;
     name?: string;
-    stationOrder?: number;
+  }>;
+  edges?: Array<{
+    fromStationId?: string;
+    toStationId?: string;
+    direction?: number;
   }>;
 };
 
@@ -173,16 +178,22 @@ export type GetTrainsDebugResponse = {
 };
 
 export type GetTrainsByStationResponse = {
-  trains?: Array<{
-    id?: string;
-    trainNo?: string;
+  stationName?: string | null;
+  connections?: Array<{
     direction?: string;
-    terminalStationName?: string | null;
-    nextStationName?: string | null;
-    trainStatus?: string;
-    trainStatusCode?: number | null;
-    isExpress?: boolean;
-    isLastTrain?: boolean;
+    directionCode?: number;
+    nextStationId?: string;
+    nextStationName?: string;
+    hasTrains?: boolean;
+    trains?: Array<{
+      id?: string;
+      trainNo?: string;
+      terminalStationName?: string | null;
+      trainStatus?: string;
+      trainStatusCode?: number | null;
+      isExpress?: boolean;
+      isLastTrain?: boolean;
+    }>;
   }>;
 };
 
@@ -218,7 +229,66 @@ export type GetMySeatShareResponse = {
   createdAt?: string;
 } | null;
 
+export type GetSeatSharesMeStatusResponse = {
+  phase?: 'active' | 'completed' | 'none';
+  share?: {
+    id?: string;
+    trainId?: string;
+    boardStationName?: string;
+    getOffStationName?: string;
+    carriages?: number[];
+    seatPosition?: number;
+    appearance?: string;
+    status?: string;
+    createdAt?: string;
+  } | null;
+  progress?: {
+    currentStationId?: string | null;
+    currentStationName?: string | null;
+    nextStationName?: string | null;
+    trainStatus?: string;
+    trainStatusCode?: number | null;
+    direction?: string;
+    directionCode?: number;
+    remainingStops?: number | null;
+    arrived?: boolean;
+  } | null;
+  result?: {
+    boardStation?: {
+      name?: string;
+      lineName?: string;
+      lineColor?: string;
+    };
+    getOffStation?: {
+      name?: string;
+      lineName?: string;
+      lineColor?: string;
+    };
+    completedAt?: string;
+    status?: string;
+    earnedReward?: number;
+    remainingReward?: number;
+  } | null;
+};
+
 export type GetSeatSharesMeLatestCompletedResponse = {
+  boardStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  getOffStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  completedAt?: string;
+  status?: string;
+  earnedReward?: number;
+  remainingReward?: number;
+} | null;
+
+export type GetSeatSharesMeRecentCompletedResponse = {
   boardStation?: {
     name?: string;
     lineName?: string;
@@ -284,7 +354,64 @@ export type GetMySeatRequestResponse = {
   createdAt?: string;
 };
 
+export type GetSeatRequestsMeStatusResponse = {
+  phase?: 'active' | 'completed' | 'none';
+  request?: {
+    id?: string;
+    trainId?: string;
+    boardStationName?: string;
+    getOffStationName?: string;
+    carriages?: number[];
+    status?: 'active' | 'completed' | 'early_exit' | 'cancelled';
+    createdAt?: string;
+  } | null;
+  progress?: {
+    currentStationId?: string | null;
+    currentStationName?: string | null;
+    nextStationName?: string | null;
+    trainStatus?: string;
+    trainStatusCode?: number | null;
+    direction?: string;
+    directionCode?: number;
+    remainingStops?: number | null;
+    arrived?: boolean;
+  } | null;
+  result?: {
+    boardStation?: {
+      name?: string;
+      lineName?: string;
+      lineColor?: string;
+    };
+    getOffStation?: {
+      name?: string;
+      lineName?: string;
+      lineColor?: string;
+    };
+    completedAt?: string;
+    status?: string;
+    spentReward?: number;
+    remainingReward?: number;
+  } | null;
+};
+
 export type GetSeatRequestsMeLatestCompletedResponse = {
+  boardStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  getOffStation?: {
+    name?: string;
+    lineName?: string;
+    lineColor?: string;
+  };
+  completedAt?: string;
+  status?: string;
+  spentReward?: number;
+  remainingReward?: number;
+} | null;
+
+export type GetSeatRequestsMeRecentCompletedResponse = {
   boardStation?: {
     name?: string;
     lineName?: string;
@@ -477,14 +604,24 @@ export async function createSeatShare(body: CreateSeatShareRequest): Promise<Cre
   return apiFetch('/api/v1/seat-shares/', { method: 'POST', body, auth: true });
 }
 
-/** 내 active 공유 조회 */
+/** [DEPRECATED] 내 active 공유 조회 */
 export async function getMySeatShare(): Promise<GetMySeatShareResponse> {
   return apiFetch('/api/v1/seat-shares/me', { method: 'GET', auth: true });
 }
 
-/** 최근 완료된 자리 공유 여정 조회 */
+/** 자리 공유 여정 상태 통합 조회(폴링용) */
+export async function getSeatSharesMeStatus(): Promise<GetSeatSharesMeStatusResponse> {
+  return apiFetch('/api/v1/seat-shares/me/status', { method: 'GET', auth: true });
+}
+
+/** [DEPRECATED] 최근 완료된 자리 공유 여정 조회(소비형) */
 export async function getSeatSharesMeLatestCompleted(): Promise<GetSeatSharesMeLatestCompletedResponse> {
   return apiFetch('/api/v1/seat-shares/me/latest-completed', { method: 'GET', auth: true });
+}
+
+/** 최근 완료된 자리 공유 여정 다시보기(비소비형) */
+export async function getSeatSharesMeRecentCompleted(): Promise<GetSeatSharesMeRecentCompletedResponse> {
+  return apiFetch('/api/v1/seat-shares/me/recent-completed', { method: 'GET', auth: true });
 }
 
 /** 자리 공유 정보 수정 */
@@ -507,14 +644,24 @@ export async function createSeatRequest(body: CreateSeatRequestRequest): Promise
   return apiFetch('/api/v1/seat-requests/', { method: 'POST', body, auth: true });
 }
 
-/** active 착석 희망 조회 */
+/** [DEPRECATED] active 착석 희망 조회 */
 export async function getMySeatRequest(): Promise<GetMySeatRequestResponse> {
   return apiFetch('/api/v1/seat-requests/me', { method: 'GET', auth: true });
 }
 
-/** 최근 완료된 착석 희망 여정 조회 */
+/** 착석 희망 여정 상태 통합 조회(폴링용) */
+export async function getSeatRequestsMeStatus(): Promise<GetSeatRequestsMeStatusResponse> {
+  return apiFetch('/api/v1/seat-requests/me/status', { method: 'GET', auth: true });
+}
+
+/** [DEPRECATED] 최근 완료된 착석 희망 여정 조회(소비형) */
 export async function getSeatRequestsMeLatestCompleted(): Promise<GetSeatRequestsMeLatestCompletedResponse> {
   return apiFetch('/api/v1/seat-requests/me/latest-completed', { method: 'GET', auth: true });
+}
+
+/** 최근 완료된 착석 희망 여정 다시보기(비소비형) */
+export async function getSeatRequestsMeRecentCompleted(): Promise<GetSeatRequestsMeRecentCompletedResponse> {
+  return apiFetch('/api/v1/seat-requests/me/recent-completed', { method: 'GET', auth: true });
 }
 
 /** 착석 희망 정보 수정 */

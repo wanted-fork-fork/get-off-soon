@@ -8,11 +8,11 @@ import { useJourney } from '../src/context/JourneyContext';
 import { TopBar } from '../src/components/ui/TopBar';
 import { RoleCard } from '../src/components/ui/RoleCard';
 import { WelcomeOverlay } from '../src/components/ui/WelcomeOverlay';
-import { getMySeatShare, getMySeatRequest, getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted, getTrainsByLine, getRewards } from '../src/api/generated';
+import { getMySeatShare, getMySeatRequest, getSeatSharesMeRecentCompleted, getSeatRequestsMeRecentCompleted, getSeatSharesMeStatus, getSeatRequestsMeStatus, getRewards } from '../src/api/generated';
 import CoinIcon from '../assets/icons/Coin.svg';
 import type { GetMySeatShareResponse, GetMySeatRequestResponse } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
-import { LINE_2_ID, LINE_2_STATIONS, STATION_BY_ID, STATION_BY_NAME } from '../src/constants/subway';
+import { LINE_2_ID, LINE_2_STATIONS } from '../src/constants/subway';
 import { SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
 
 type ActiveShare = NonNullable<GetMySeatShareResponse>;
@@ -26,29 +26,6 @@ let didInitialRouting = false;
 const ONBOARDING_SEEN_KEY = 'onboarding.welcomeSeen';
 
 const JOURNEY_IN_PROGRESS_TEXT = '여정 중에는\n자리 정보 등록을 할 수 없어요.';
-
-const AVG_MIN_PER_STATION = 2;
-
-// getting-off-status 화면과 동일한 방식으로 도착 예정 시각(xx:xx)을 계산한다.
-function computeEtaText(
-  boardName: string | undefined,
-  getOffStationId: string | undefined,
-  currentStationId: string | null | undefined,
-): string | null {
-  const boardStation = boardName ? STATION_BY_NAME[boardName] : null;
-  const getOffStation = getOffStationId ? STATION_BY_ID[getOffStationId] : null;
-  const currentStation = currentStationId ? STATION_BY_ID[currentStationId] : null;
-  if (!boardStation || !getOffStation || !currentStation) return null;
-
-  const total = Math.abs(getOffStation.order - boardStation.order);
-  if (total <= 0) return null;
-  const direction = getOffStation.order >= boardStation.order ? 1 : -1;
-  const traveled = (currentStation.order - boardStation.order) * direction;
-  const stationsRemaining = Math.max(0, total - Math.max(0, traveled));
-
-  const eta = new Date(Date.now() + stationsRemaining * AVG_MIN_PER_STATION * 60_000);
-  return `${String(eta.getHours()).padStart(2, '0')}:${String(eta.getMinutes()).padStart(2, '0')}`;
-}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -160,8 +137,8 @@ export default function HomeScreen() {
           }
         } else {
           const [latestShare, latestRequest] = await Promise.all([
-            getSeatSharesMeLatestCompleted().catch(() => null),
-            getSeatRequestsMeLatestCompleted().catch(() => null),
+            getSeatSharesMeRecentCompleted().catch(() => null),
+            getSeatRequestsMeRecentCompleted().catch(() => null),
           ]);
           const shareTime = latestShare?.completedAt ? new Date(latestShare.completedAt).getTime() : 0;
           const requestTime = latestRequest?.completedAt ? new Date(latestRequest.completedAt).getTime() : 0;
@@ -184,24 +161,30 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  // 진행 중인 여정(하차 공유·착석 희망)이 있으면 열차 위치를 받아 도착 예정 시각을 계산한다.
-  const activeJourney = activeShare ?? activeRequest;
-  const journeyTrainId = activeJourney?.trainId;
-  const journeyBoardName = activeJourney?.boardStationName;
-  const journeyGetOffName = activeJourney?.getOffStationName;
+  // 진행 중인 여정(하차 공유·착석 희망)이 있으면 역할별 통합 status 폴링으로
+  // 하차역까지 남은 정류장 수를 받아 "N정거장 뒤 도착" 문구를 만든다.
+  const isShareJourney = !!activeShare;
+  const hasActiveJourney = !!(activeShare ?? activeRequest);
   useEffect(() => {
-    if (!journeyTrainId) {
+    if (!hasActiveJourney) {
       setEtaText(null);
       return;
     }
     let cancelled = false;
     const fetchEta = async () => {
       try {
-        const res = await getTrainsByLine(LINE_2_ID);
+        const res = isShareJourney
+          ? await getSeatSharesMeStatus()
+          : await getSeatRequestsMeStatus();
         if (cancelled) return;
-        const train = res.trains?.find((t) => t.id === journeyTrainId);
-        const found = LINE_2_STATIONS.find((s) => s.name === journeyGetOffName);
-        setEtaText(computeEtaText(journeyBoardName, found?.id, train?.currentStationId));
+        if (res.phase === 'active' && res.progress) {
+          const n = res.progress.remainingStops;
+          if (res.progress.arrived || n === 0) setEtaText('곧 도착');
+          else if (typeof n === 'number') setEtaText(`${n}정거장 뒤 도착`);
+          else setEtaText(null);
+        } else {
+          setEtaText(null);
+        }
       } catch (err) {
         if (err instanceof ApiError) return;
       }
@@ -212,7 +195,7 @@ export default function HomeScreen() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [journeyTrainId, journeyGetOffName, journeyBoardName]);
+  }, [hasActiveJourney, isShareJourney]);
 
   const handleGettingOff = () => {
     reset();
@@ -257,7 +240,7 @@ export default function HomeScreen() {
               {top}
             </Text>
             <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
-              {`${etaText ?? '--:--'} 도착 예정입니다.`}
+              {etaText ?? '도착 정보 확인 중'}
             </Text>
           </View>
           <Image
@@ -281,7 +264,7 @@ export default function HomeScreen() {
               {top}
             </Text>
             <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
-              {`${etaText ?? '--:--'} 도착 예정입니다.`}
+              {etaText ?? '도착 정보 확인 중'}
             </Text>
           </View>
           <Image

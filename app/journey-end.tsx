@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../src/constants/theme';
 import { Button, BottomButtonArea } from '../src/components/ui/Button';
 import { useJourney } from '../src/context/JourneyContext';
-import { getSeatSharesMeLatestCompleted, getSeatRequestsMeLatestCompleted } from '../src/api/generated';
+import { getSeatSharesMeRecentCompleted, getSeatRequestsMeRecentCompleted } from '../src/api/generated';
 import TrainIcon from '../assets/icons/Train.svg';
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -72,7 +72,7 @@ export default function JourneyEndScreen() {
     const fetch = async () => {
       try {
         if (role === 'want-seat') {
-          const res = await getSeatRequestsMeLatestCompleted();
+          const res = await getSeatRequestsMeRecentCompleted();
 
           if (res) {
             setData({
@@ -85,7 +85,7 @@ export default function JourneyEndScreen() {
             });
           }
         } else {
-          const res = await getSeatSharesMeLatestCompleted();
+          const res = await getSeatSharesMeRecentCompleted();
 
           if (res) {
             setData({
