@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, Image, ImageSourcePropType } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { colors } from '../../constants/theme';
 
 interface RoleCardProps {
@@ -12,7 +13,8 @@ interface RoleCardProps {
 }
 
 export function RoleCard({ title, description, onPress, image, disabled, disabledText }: RoleCardProps) {
-  const contentOpacity = disabled ? 0.25 : 1;
+  // disabled일 때는 dim + 블러 오버레이로 가리므로 콘텐츠는 살짝만 흐리게 둔다.
+  const contentOpacity = disabled ? 0.6 : 1;
 
   return (
     <TouchableOpacity
@@ -62,7 +64,9 @@ export function RoleCard({ title, description, onPress, image, disabled, disable
         />
       )}
       {disabled && disabledText && (
-        <View
+        <BlurView
+          intensity={24}
+          tint="dark"
           style={{
             position: 'absolute',
             top: 0,
@@ -72,6 +76,7 @@ export function RoleCard({ title, description, onPress, image, disabled, disable
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: 16,
+            backgroundColor: 'rgba(27, 29, 34, 0.35)',
           }}
         >
           <Text
@@ -86,7 +91,7 @@ export function RoleCard({ title, description, onPress, image, disabled, disable
           >
             {disabledText}
           </Text>
-        </View>
+        </BlurView>
       )}
     </TouchableOpacity>
   );
