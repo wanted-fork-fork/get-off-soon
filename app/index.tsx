@@ -236,6 +236,8 @@ export default function HomeScreen() {
     alignItems: 'center' as const,
     backgroundColor: '#2D3239',
     borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#0095F8',
     padding: 20,
     gap: 8,
   };
