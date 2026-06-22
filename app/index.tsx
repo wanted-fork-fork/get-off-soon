@@ -180,7 +180,7 @@ export default function HomeScreen() {
         if (res.phase === 'active' && res.progress) {
           const n = res.progress.remainingStops;
           if (res.progress.arrived || n === 0) setEtaText('곧 도착');
-          else if (typeof n === 'number') setEtaText(`${n}정거장 뒤 도착`);
+          else if (typeof n === 'number') setEtaText(`${n} 정거장 뒤 도착 예정입니다.`);
           else setEtaText(null);
         } else {
           setEtaText(null);
@@ -236,10 +236,10 @@ export default function HomeScreen() {
           style={pillBaseStyle}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#7BA7FF', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+            <Text style={{ color: '#0095F8', fontSize: 13, fontWeight: '600', marginBottom: 12 }}>
               {top}
             </Text>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', lineHeight: 18, letterSpacing: -0.27 }}>
               {etaText ?? '도착 정보 확인 중'}
             </Text>
           </View>
@@ -260,10 +260,10 @@ export default function HomeScreen() {
           style={pillBaseStyle}
         >
           <View style={{ flex: 1 }}>
-            <Text style={{ color: '#7BA7FF', fontSize: 13, fontWeight: '600', marginBottom: 6 }}>
+            <Text style={{ color: '#0095F8', fontSize: 13, fontWeight: '600', marginBottom: 12 }}>
               {top}
             </Text>
-            <Text style={{ color: colors.fg.DEFAULT, fontSize: 15, fontWeight: '500' }}>
+            <Text style={{ color: colors.fg.DEFAULT, fontSize: 18, fontWeight: '600', lineHeight: 18, letterSpacing: -0.27 }}>
               {etaText ?? '도착 정보 확인 중'}
             </Text>
           </View>
