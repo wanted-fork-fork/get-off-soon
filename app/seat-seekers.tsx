@@ -16,10 +16,13 @@ import {
   getMe,
   viewShareDetail,
   earlyExitSeatRequest,
+  getSeatRequestsMeStatus,
   ViewShareDetailResponse,
 } from '../src/api/generated';
 import { ApiError } from '../src/api/client';
+import { SosReportSheet } from '../src/components/ui/SosReportSheet';
 import HomeIcon from '../assets/icons/Home.svg';
+import SosIcon from '../assets/icons/Sos.svg';
 
 type Share = {
   id: string;
@@ -42,6 +45,7 @@ export default function SeatSeekersScreen() {
   const [pendingShareId, setPendingShareId] = useState<string | null>(null);
   const [rewardBalance, setRewardBalance] = useState<number | null>(null);
   const [viewing, setViewing] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -116,6 +120,30 @@ export default function SeatSeekersScreen() {
     };
   }, [filterCar]);
 
+  // 통합 상태 폴링 - 하차역 도착(완료) 시 자동으로 journey-end로 이동
+  useEffect(() => {
+    if (!state.requestId) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await getSeatRequestsMeStatus();
+        if (cancelled) return;
+        if (res.phase === 'completed' || res.phase === 'none') {
+          reset();
+          router.replace({ pathname: '/journey-end', params: { role: 'want-seat' } } as any);
+        }
+      } catch (err) {
+        if (err instanceof ApiError) return;
+      }
+    };
+    poll();
+    const id = setInterval(poll, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [state.requestId]);
+
   const station = LINE_2_STATIONS.find(s => s.id === state.stationId);
 
   const sortedShares = [...shares].sort((a, b) => a.stopsAway - b.stopsAway);
@@ -187,7 +215,10 @@ export default function SeatSeekersScreen() {
         <Text style={{ position: 'absolute', left: 0, right: 0, textAlign: 'center', color: colors.fg.DEFAULT, fontSize: 17, fontWeight: '600', pointerEvents: 'none' }}>
           하차 예정자
         </Text>
-        {
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => setSosOpen(true)} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+            <SosIcon width={24} height={24} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push('/getting-off-list' as any)} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
             <View style={{ gap: 4 }}>
               <View style={{ width: 18, height: 2, backgroundColor: colors.fg.DEFAULT, borderRadius: 1 }} />
@@ -195,7 +226,7 @@ export default function SeatSeekersScreen() {
               <View style={{ width: 18, height: 2, backgroundColor: colors.fg.DEFAULT, borderRadius: 1 }} />
             </View>
           </TouchableOpacity>
-        }
+        </View>
       </View>
 
       <View style={{ marginBottom: 40 }}>
@@ -283,6 +314,12 @@ export default function SeatSeekersScreen() {
           </View>
         </View>
       </BottomSheet>
+
+      <SosReportSheet
+        open={sosOpen}
+        onClose={() => setSosOpen(false)}
+        carNumbers={state.carNumbers}
+      />
     </SafeAreaView>
   );
 }
