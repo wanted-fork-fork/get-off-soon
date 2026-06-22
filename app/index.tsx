@@ -26,6 +26,7 @@ let didInitialRouting = false;
 const ONBOARDING_SEEN_KEY = 'onboarding.welcomeSeen';
 
 const JOURNEY_IN_PROGRESS_TEXT = '여정 중에는\n자리 정보 등록을 할 수 없어요.';
+const JOURNEY_IN_PROGRESS_VIEW_TEXT = '여정 중에는\n자리 정보를 볼 수 없어요.';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -357,7 +358,7 @@ export default function HomeScreen() {
             onPress={activeRequest ? () => router.replace('/seat-seekers' as any) : handleWantSeat}
             image={require('../assets/images/main_2.png')}
             disabled={!!activeShare}
-            disabledText={JOURNEY_IN_PROGRESS_TEXT}
+            disabledText={JOURNEY_IN_PROGRESS_VIEW_TEXT}
           />
         </View>
       </ScrollView>
