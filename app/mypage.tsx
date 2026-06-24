@@ -13,6 +13,11 @@ import BrandKakao from '../assets/icons/BrandKakao.svg';
 
 const GUEST_PROVIDERS = new Set(['dev', 'guest', 'anonymous', '']);
 
+// 마이페이지는 당분간 '리워드 내역'·'문의하기'만 노출한다.
+// 나머지 메뉴(프로필 배너/FAQ/약관/로그아웃/탈퇴)는 코드를 지우지 않고 숨겨만 둔다.
+// 다시 노출하려면 이 값을 true로 바꾸면 된다.
+const SHOW_HIDDEN_MENUS = false;
+
 const EXTERNAL_LINKS = {
   faq: 'https://www.notion.so/36b92f26cef7802b8e7feaf09ca2bc52',
   inquiry: 'https://forms.gle/wJhUwM4fL9o5HdiT6',
@@ -110,7 +115,7 @@ export default function MyPageScreen() {
 
   const refreshAuthStatus = React.useCallback(async () => {
     try {
-      const res = await getMe();
+      const res = await getMe({ silent: true });
       setMe(res);
       setLoggedIn(isSocialProvider(res.provider));
     } catch {
@@ -133,7 +138,7 @@ export default function MyPageScreen() {
     if (loggingOut) return;
     setLoggingOut(true);
     try {
-      await logout();
+      await logout({ silent: true });
     } catch (err) {
       if (!(err instanceof ApiError)) {
         Alert.alert('로그아웃 실패', '잠시 후 다시 시도해주세요.');
@@ -162,7 +167,7 @@ export default function MyPageScreen() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 48 }}
         showsVerticalScrollIndicator={false}
       >
-        {loggedIn === true && me && (
+        {SHOW_HIDDEN_MENUS && loggedIn === true && me && (
           <UserProfileBanner
             label={(me as any).email ?? me.name ?? '회원'}
             rewardPoints={me.rewardPoints ?? 0}
@@ -187,19 +192,23 @@ export default function MyPageScreen() {
         {/* 고객지원 */}
         <View style={{ marginBottom: 32 }}>
           <SectionTitle>고객지원</SectionTitle>
-          <MenuRow icon={ICONS.faq} label="자주 묻는 질문" onPress={() => openExternalLink(EXTERNAL_LINKS.faq)} />
+          {SHOW_HIDDEN_MENUS && (
+            <MenuRow icon={ICONS.faq} label="자주 묻는 질문" onPress={() => openExternalLink(EXTERNAL_LINKS.faq)} />
+          )}
           <MenuRow icon={ICONS.question} label="문의하기" onPress={() => openExternalLink(EXTERNAL_LINKS.inquiry)} />
         </View>
 
         {/* 약관 및 정책 */}
-        <View style={{ marginBottom: 32 }}>
-          <SectionTitle>약관 및 정책</SectionTitle>
-          <MenuRow icon={ICONS.terms} label="서비스 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.terms)} />
-          <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
-        </View>
+        {SHOW_HIDDEN_MENUS && (
+          <View style={{ marginBottom: 32 }}>
+            <SectionTitle>약관 및 정책</SectionTitle>
+            <MenuRow icon={ICONS.terms} label="서비스 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.terms)} />
+            <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
+          </View>
+        )}
 
         {/* 로그아웃 / 회원 탈퇴 — 로그인 상태에서만 노출 */}
-        {loggedIn === true && (
+        {SHOW_HIDDEN_MENUS && loggedIn === true && (
           <>
             <TouchableOpacity activeOpacity={0.7} style={{ paddingVertical: 14 }} onPress={() => setLogoutOpen(true)}>
               <Text style={footerActionStyle}>로그아웃</Text>
