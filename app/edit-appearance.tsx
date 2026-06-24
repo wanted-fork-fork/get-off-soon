@@ -23,7 +23,7 @@ export default function EditAppearanceScreen() {
 
     setSubmitting(true);
     try {
-      await updateSeatShares(state.shareId, { appearance: state.appearance.trim() });
+      await updateSeatShares(state.shareId, { appearance: state.appearance.trim() }, { silent: true });
       router.dismiss();
     } catch (err) {
       if (err instanceof ApiError) Alert.alert('수정 실패', err.message);

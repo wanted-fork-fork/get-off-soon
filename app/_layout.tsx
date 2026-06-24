@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { Text, TextInput } from 'react-native';
 import { JourneyProvider } from '../src/context/JourneyContext';
+import { ToastProvider } from '../src/components/ui/Toast';
 import { bootstrapAuth } from '../src/api/tokenStore';
 import '../src/shared/styles/global.css';
 
@@ -50,20 +51,22 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <JourneyProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#1B1D22' },
-            animation: 'fade',
-            animationDuration: 180,
-            gestureEnabled: false,
-          }}
-        >
-          <Stack.Screen name="index" />
-          <Stack.Screen name="edit-car" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="edit-seat" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="edit-appearance" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        </Stack>
+        <ToastProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#1B1D22' },
+              animation: 'fade',
+              animationDuration: 180,
+              gestureEnabled: false,
+            }}
+          >
+            <Stack.Screen name="index" />
+            <Stack.Screen name="edit-car" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="edit-seat" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="edit-appearance" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          </Stack>
+        </ToastProvider>
       </JourneyProvider>
     </SafeAreaProvider>
   );

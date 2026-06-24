@@ -50,7 +50,7 @@ export default function SeatSeekersScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const reqRes = await getMySeatRequest();
+        const reqRes = await getMySeatRequest({ silent: true });
         if (reqRes && reqRes.id) {
           setRequestId(reqRes.id);
           if (!state.trainId && reqRes.trainId) {
@@ -75,12 +75,14 @@ export default function SeatSeekersScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 하차 예정자 카드 목록 폴링 - 칸 선택 시 즉시 + 30초 주기로 갱신.
+  // 사용자가 열람한 상세(viewedDetails)와 펼친 카드(expandedId)는 유지된다.
   useEffect(() => {
     if (filterCar == null) return;
     let cancelled = false;
-    (async () => {
+    const load = async () => {
       try {
-        const sharesRes = await getSharesForMyRequest({ carriage: filterCar });
+        const sharesRes = await getSharesForMyRequest({ carriage: filterCar }, { silent: true });
         console.log('[seat-seekers] getSharesForMyRequest response:', JSON.stringify(sharesRes, null, 2));
         if (cancelled) return;
         const flat: Share[] = [];
@@ -114,9 +116,12 @@ export default function SeatSeekersScreen() {
         if (err instanceof ApiError) return;
         throw err;
       }
-    })();
+    };
+    load();
+    const id = setInterval(load, 30_000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, [filterCar]);
 
@@ -126,7 +131,7 @@ export default function SeatSeekersScreen() {
     let cancelled = false;
     const poll = async () => {
       try {
-        const res = await getSeatRequestsMeStatus();
+        const res = await getSeatRequestsMeStatus({ silent: true });
         if (cancelled) return;
         if (res.phase === 'completed' || res.phase === 'none') {
           reset();
@@ -156,7 +161,7 @@ export default function SeatSeekersScreen() {
     if (viewedDetails[shareId]) return;
     setPendingShareId(shareId);
     try {
-      const me = await getMe();
+      const me = await getMe({ silent: true });
       setRewardBalance(me.rewardPoints ?? 0);
     } catch {
       setRewardBalance(0);
@@ -168,7 +173,7 @@ export default function SeatSeekersScreen() {
     if (!pendingShareId) return;
     setViewing(true);
     try {
-      const detail = await viewShareDetail(pendingShareId);
+      const detail = await viewShareDetail(pendingShareId, { silent: true });
       console.log('[seat-seekers] viewShareDetail response:', JSON.stringify(detail, null, 2));
       setViewedDetails(prev => ({ ...prev, [pendingShareId!]: detail }));
       setExpandedId(pendingShareId);
@@ -189,7 +194,7 @@ export default function SeatSeekersScreen() {
     if (state.requestId) {
       setEnding(true);
       try {
-        await earlyExitSeatRequest(state.requestId);
+        await earlyExitSeatRequest(state.requestId, { silent: true });
         reset();
         router.replace({ pathname: '/journey-end', params: endParams } as any);
       } catch (err) {

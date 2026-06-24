@@ -72,7 +72,7 @@ export default function JourneyEndScreen() {
     const fetch = async () => {
       try {
         if (role === 'want-seat') {
-          const res = await getSeatRequestsMeRecentCompleted();
+          const res = await getSeatRequestsMeRecentCompleted({ silent: true });
 
           if (res) {
             setData({
@@ -85,7 +85,7 @@ export default function JourneyEndScreen() {
             });
           }
         } else {
-          const res = await getSeatSharesMeRecentCompleted();
+          const res = await getSeatSharesMeRecentCompleted({ silent: true });
 
           if (res) {
             setData({

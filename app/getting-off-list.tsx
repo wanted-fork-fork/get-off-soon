@@ -21,7 +21,7 @@ export default function GettingOffListScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getViewedShares();
+        const res = await getViewedShares({ silent: true });
         setData(res);
       } catch (err) {
         if (err instanceof ApiError) return;

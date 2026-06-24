@@ -58,7 +58,7 @@ export default function HomeScreen() {
       let cancelled = false;
       (async () => {
         try {
-          const res = await getRewards();
+          const res = await getRewards({ silent: true });
           if (!cancelled) setRewardPoints(res.rewardPoints ?? 0);
         } catch (e) {
           if (e instanceof ApiError) return;
@@ -95,8 +95,8 @@ export default function HomeScreen() {
     (async () => {
       try {
         const [shareRes, requestRes] = await Promise.all([
-          getMySeatShare(),
-          getMySeatRequest(),
+          getMySeatShare({ silent: true }),
+          getMySeatRequest({ silent: true }),
         ]);
         console.log('[home] getMySeatShare 응답:', JSON.stringify(shareRes, null, 2));
         console.log('[home] getMySeatRequest 응답:', JSON.stringify(requestRes, null, 2));
@@ -138,8 +138,8 @@ export default function HomeScreen() {
           }
         } else {
           const [latestShare, latestRequest] = await Promise.all([
-            getSeatSharesMeRecentCompleted().catch(() => null),
-            getSeatRequestsMeRecentCompleted().catch(() => null),
+            getSeatSharesMeRecentCompleted({ silent: true }).catch(() => null),
+            getSeatRequestsMeRecentCompleted({ silent: true }).catch(() => null),
           ]);
           const shareTime = latestShare?.completedAt ? new Date(latestShare.completedAt).getTime() : 0;
           const requestTime = latestRequest?.completedAt ? new Date(latestRequest.completedAt).getTime() : 0;
@@ -175,8 +175,8 @@ export default function HomeScreen() {
     const fetchEta = async () => {
       try {
         const res = isShareJourney
-          ? await getSeatSharesMeStatus()
-          : await getSeatRequestsMeStatus();
+          ? await getSeatSharesMeStatus({ silent: true })
+          : await getSeatRequestsMeStatus({ silent: true });
         if (cancelled) return;
         if (res.phase === 'active' && res.progress) {
           const n = res.progress.remainingStops;

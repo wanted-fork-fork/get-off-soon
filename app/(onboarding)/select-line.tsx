@@ -203,7 +203,7 @@ export default function SelectLineScreen() {
     setConnections([]);
     setLoadingTrains(true);
     try {
-      const res = await getTrainsByStation(station.id);
+      const res = await getTrainsByStation(station.id, { silent: true });
       console.log(
         `[select-line] getTrainsByStation(${station.id} / ${name})`,
         'connections.length =', res.connections?.length ?? 0,

@@ -24,7 +24,7 @@ export default function EditSeatScreen() {
 
     setSubmitting(true);
     try {
-      await updateSeatShares(state.shareId, { seatPosition: SEAT_ZONE_TO_POSITION[state.seatZone] });
+      await updateSeatShares(state.shareId, { seatPosition: SEAT_ZONE_TO_POSITION[state.seatZone] }, { silent: true });
       router.dismiss();
     } catch (err) {
       if (err instanceof ApiError) Alert.alert('수정 실패', err.message);

@@ -31,7 +31,7 @@ export default function SelectCarScreen() {
           trainId: state.trainId,
           getOffStationId: state.stationId,
           carriages: state.carNumbers,
-        });
+        }, { silent: true });
         setRequestId(res.id!);
         router.replace('/seat-seekers' as any);
       } catch (err) {

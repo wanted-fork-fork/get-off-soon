@@ -108,7 +108,7 @@ export default function RewardHistoryScreen() {
     let active = true;
     (async () => {
       try {
-        const res = await getRewards();
+        const res = await getRewards({ silent: true });
         if (!active) return;
         setRewardPoints(res.rewardPoints ?? 0);
         setItems(res.history ?? []);

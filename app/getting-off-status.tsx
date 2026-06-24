@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useJourney } from '../src/context/JourneyContext';
 import { colors } from '../src/constants/theme';
 import { getSeatZoneLabel, SEAT_POSITION_TO_ZONE } from '../src/constants/seatZone';
-import { STATION_BY_ID, STATION_BY_NAME, LINE_2_STATIONS, LINE_2_ID } from '../src/constants/subway';
+import { STATION_BY_ID, STATION_BY_NAME, LINE_2_STATIONS, LINE_2_ID, stopsBetweenOnLine2 } from '../src/constants/subway';
 import { Button } from '../src/components/ui/Button';
 import { BottomSheet } from '../src/components/ui/BottomSheet';
 import { getMySeatShare, earlyExitSeatShare, getTrainsByLine, getSeatSharesMeStatus } from '../src/api/generated';
@@ -53,6 +53,9 @@ export default function GettingOffStatusScreen() {
   const [boardStationName, setBoardStationName] = useState<string | null>(null);
   // 하차역까지 남은 정류장 수 (status 폴링의 progress.remainingStops). null = 위치 미상
   const [remainingStops, setRemainingStops] = useState<number | null>(null);
+  // 진행 방향 판정용 - 현재역/다음역 (status 폴링의 progress)
+  const [currentStationName, setCurrentStationName] = useState<string | null>(null);
+  const [nextStationName, setNextStationName] = useState<string | null>(null);
   const [trainNo, setTrainNo] = useState<string | null>(null);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
@@ -61,7 +64,7 @@ export default function GettingOffStatusScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getMySeatShare();
+        const res = await getMySeatShare({ silent: true });
         console.log('[getting-off-status] getMySeatShare:', JSON.stringify(res, null, 2));
         if (!res) return;
         setShareId(res.id!);
@@ -96,7 +99,7 @@ export default function GettingOffStatusScreen() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await getTrainsByLine(LINE_2_ID);
+        const res = await getTrainsByLine(LINE_2_ID, { silent: true });
         if (cancelled) return;
         const train = res.trains?.find((t) => t.id === state.trainId);
         if (train?.trainNo) setTrainNo(train.trainNo);
@@ -113,11 +116,15 @@ export default function GettingOffStatusScreen() {
   const getOffStation = state.stationId ? STATION_BY_ID[state.stationId] : null;
 
   // 진행률 바: 서버의 remainingStops 기준. 전체 정거장 수는 로컬 노선 상수로 근사한다.
+  // 2호선 본선(order 1~43)은 순환선이라 단순히 order를 빼면 안 되고, 진행 방향(내선/외선)을
+  // 따라 wrap을 고려해야 한다. 방향은 서버가 주는 현재역→다음역의 order 변화로 판정한다.
+  //   - order 증가 방향(예: 사당→서울대입구) = 내선
+  //   - order 감소 방향(예: 서울대입구→사당) = 외선
   let progressPct = 0;
   let stationsRemaining = remainingStops ?? 0;
   if (remainingStops != null && boardStation && getOffStation) {
-    const total = Math.abs(getOffStation.order - boardStation.order);
-    if (total > 0) {
+    const total = stopsBetweenOnLine2(boardStation, getOffStation, currentStationName, nextStationName);
+    if (total != null && total > 0) {
       progressPct = Math.max(0, Math.min(1, 1 - remainingStops / total));
     }
     stationsRemaining = Math.max(0, remainingStops);
@@ -143,11 +150,13 @@ export default function GettingOffStatusScreen() {
     let cancelled = false;
     const poll = async () => {
       try {
-        const res = await getSeatSharesMeStatus();
+        const res = await getSeatSharesMeStatus({ silent: true });
         console.log('[getting-off-status] poll status:', JSON.stringify(res, null, 2));
         if (cancelled) return;
         if (res.phase === 'active' && res.progress) {
           setRemainingStops(res.progress.remainingStops ?? null);
+          setCurrentStationName(res.progress.currentStationName ?? null);
+          setNextStationName(res.progress.nextStationName ?? null);
           if (res.share?.boardStationName) setBoardStationName(res.share.boardStationName);
         } else if (res.phase === 'completed' || res.phase === 'none') {
           // completed result는 1회 소비형 — journey-end는 recent-completed(비소비형)로 다시 조회한다.
@@ -175,7 +184,7 @@ export default function GettingOffStatusScreen() {
     if (state.shareId) {
       setEnding(true);
       try {
-        await earlyExitSeatShare(state.shareId);
+        await earlyExitSeatShare(state.shareId, { silent: true });
         reset();
         router.replace({ pathname: '/journey-end', params: endParams } as any);
       } catch (err) {
@@ -205,22 +214,25 @@ export default function GettingOffStatusScreen() {
             착석 희망자에게 내 하차 정보가 공유되고 있어요.
           </Text>
 
-          <View style={{ marginTop: 32, marginBottom: 24, marginHorizontal: 32 - 24, height: 80 }}>
+          <View style={{ marginTop: 32, marginBottom: 24, marginHorizontal: 24 + 12, height: 80,  }}>
             <TrainIcon
               width={73}
               height={32}
               style={{ position: 'absolute', top: 8, left: progressPctLabel, marginLeft: -73 / 2, zIndex: 2 }}
             />
-            <View style={{ position: 'absolute', left: 0, right: 0, top: 38, height: 6, backgroundColor: '#434B5B', borderRadius: 3 }}>
+            <View style={{ position: 'absolute', left: 0, right: 0, top: 38, height: 6, marginHorizontal: -34, backgroundColor: '#434B5B', borderRadius: 3, zIndex: -1 }}>
+              <View style={{ height: 6, width: 40, backgroundColor: colors.accent.blue, borderRadius: 3 }} />
+            </View>
+            <View style={{ position: 'absolute', left: 0, right: 0, top: 38, height: 6, marginHorizontal: 0, backgroundColor: '#434B5B', borderRadius: 3 }}>
               <View style={{ height: 6, width: progressPctLabel, backgroundColor: colors.accent.blue, borderRadius: 3 }} />
             </View>
-            <View style={{ position: 'absolute', left: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginLeft: -34 }}>
+            <View style={{ position: 'absolute', left: 0, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginLeft: -34 }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#13A51D', backgroundColor: colors.surface.DEFAULT }} />
               <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
                 {boardName}
               </Text>
             </View>
-            <View style={{ position: 'absolute', right: 34 - 6, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginRight: -34 }}>
+            <View style={{ position: 'absolute', right: 0, top: 35, zIndex: 1, alignItems: 'center', width: 80, marginRight: -34 }}>
               <View style={{ width: 12, height: 12, borderRadius: 6, borderWidth: 3, borderColor: '#CC4B2B', backgroundColor: colors.surface.DEFAULT }} />
               <Text style={{ color: colors.fg.secondary, fontSize: 13, textAlign: 'center', marginTop: 8 }}>
                 {getOffName}

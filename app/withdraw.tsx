@@ -19,7 +19,7 @@ export default function WithdrawScreen() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      await deleteAccount();
+      await deleteAccount({ silent: true });
     } catch (err) {
       console.log('[withdraw] deleteAccount error:', err);
       if (err instanceof ApiError) {

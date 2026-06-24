@@ -24,7 +24,7 @@ export default function EditCarScreen() {
 
     setSubmitting(true);
     try {
-      await updateSeatShares(state.shareId, { carriages: state.carNumbers });
+      await updateSeatShares(state.shareId, { carriages: state.carNumbers }, { silent: true });
       router.dismiss();
     } catch (err) {
       if (err instanceof ApiError) Alert.alert('수정 실패', err.message);

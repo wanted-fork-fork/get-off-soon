@@ -40,7 +40,7 @@ export default function AppearanceScreen() {
         carriages: state.carNumbers,
         seatPosition,
         appearance: state.appearance.trim(),
-      });
+      }, { silent: true });
       setShareId(res.id!);
       router.replace('/getting-off-status' as any);
     } catch (err) {
