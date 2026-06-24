@@ -123,11 +123,10 @@ export default function GettingOffStatusScreen() {
     stationsRemaining = Math.max(0, remainingStops);
   }
 
-  const AVG_MIN_PER_STATION = 2;
-  const eta = new Date(Date.now() + stationsRemaining * AVG_MIN_PER_STATION * 60_000);
-  const timeStr = remainingStops != null
-    ? `${String(eta.getHours()).padStart(2, '0')}:${String(eta.getMinutes()).padStart(2, '0')}`
-    : '--:--';
+  // 도착 시간은 서버가 주지 않으므로 임의 추정하지 않고, 남은 정류장 수만 노출한다.
+  const stopsLabel = remainingStops != null
+    ? `${stationsRemaining} 정류장 전`
+    : '위치 확인 중';
 
   const sortedCarriages = [...state.carNumbers].sort((a, b) => a - b);
   const carLabel = sortedCarriages.length > 0
@@ -200,7 +199,7 @@ export default function GettingOffStatusScreen() {
         <View style={{ height: 64 }} />
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           <Text style={{ color: colors.fg.DEFAULT, fontSize: 28, fontWeight: '700', marginBottom: 8 }}>
-            {timeStr} 하차 예정
+            {stopsLabel}
           </Text>
           <Text style={{ color: colors.fg.muted, fontSize: 14, marginBottom: 32 }}>
             착석 희망자에게 내 하차 정보가 공유되고 있어요.
