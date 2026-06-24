@@ -29,18 +29,21 @@ const asyncStorageTokenStore = {
 
 /**
  * 게스트 로그인에 사용할 기기 식별자를 구한다.
- * 네이티브 기기값(android id / iOS idForVendor)을 우선 사용하고,
- * 구할 수 없으면 한 번 생성해 영구 저장한 값을 재사용한다.
+ * 네이티브(android id / iOS idForVendor)를 우선 사용하고,
+ * 웹이거나 구할 수 없으면 한 번 생성해 영구 저장한 값(웹은 localStorage)을 재사용한다.
  */
 async function resolveDeviceId(): Promise<string> {
-  try {
-    const nativeId =
-      Platform.OS === 'android'
-        ? Application.getAndroidId()
-        : await Application.getIosIdForVendorAsync();
-    if (nativeId) return nativeId;
-  } catch {
-    // 네이티브 식별자 조회 실패 시 저장된 값으로 폴백
+  // 웹은 네이티브 기기값이 없으므로 저장된 UUID를 사용한다.
+  if (Platform.OS !== 'web') {
+    try {
+      const nativeId =
+        Platform.OS === 'android'
+          ? Application.getAndroidId()
+          : await Application.getIosIdForVendorAsync();
+      if (nativeId) return nativeId;
+    } catch {
+      // 네이티브 식별자 조회 실패 시 저장된 값으로 폴백
+    }
   }
 
   let stored = await AsyncStorage.getItem(DEVICE_ID_KEY);

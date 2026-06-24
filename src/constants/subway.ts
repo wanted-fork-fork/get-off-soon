@@ -83,3 +83,45 @@ export const STATION_BY_NAME: Record<string, Station> = Object.fromEntries(
 export const STATION_BY_ID: Record<string, Station> = Object.fromEntries(
   LINE_2_STATIONS.map(s => [s.id, s]),
 );
+
+// 2호선 본선 순환 구간 크기 (order 1~43, 충정로 다음이 시청으로 이어짐)
+const LINE_2_LOOP_SIZE = 43;
+const isOnLoop = (s: Station) => s.order >= 1 && s.order <= LINE_2_LOOP_SIZE;
+
+// 진행 방향(내선=order 증가 / 외선=order 감소)을 현재역→다음역 order 변화로 판정한다.
+// 판정 불가 시 null.
+function loopDirection(current: Station, next: Station): 1 | -1 | null {
+  const delta = next.order - current.order;
+  // 인접역: +1(내선) / -1(외선). wrap 경계(충정로↔시청)는 ±(LOOP-1)로 나타난다.
+  if (delta === 1 || delta === -(LINE_2_LOOP_SIZE - 1)) return 1;
+  if (delta === -1 || delta === LINE_2_LOOP_SIZE - 1) return -1;
+  // 인접하지 않은 값(역 건너뜀 등)은 부호만 사용
+  if (delta > 0) return 1;
+  if (delta < 0) return -1;
+  return null;
+}
+
+// 승차역→하차역 사이 정거장 수를 진행 방향 기준으로 계산한다.
+// 순환선이라 단순 |order 차| 가 아니라 방향에 따라 wrap을 고려해야 한다.
+// 방향을 알 수 없거나 본선 밖(지선)이면 |order 차| 로 근사한다.
+export function stopsBetweenOnLine2(
+  board: Station,
+  getOff: Station,
+  currentStationName: string | null,
+  nextStationName: string | null,
+): number {
+  const fallback = Math.abs(getOff.order - board.order);
+  if (!isOnLoop(board) || !isOnLoop(getOff)) return fallback;
+
+  const current = currentStationName ? STATION_BY_NAME[currentStationName] : null;
+  const next = nextStationName ? STATION_BY_NAME[nextStationName] : null;
+  if (!current || !next || !isOnLoop(current) || !isOnLoop(next)) return fallback;
+
+  const dir = loopDirection(current, next);
+  if (dir == null) return fallback;
+
+  const diff = dir > 0
+    ? (getOff.order - board.order + LINE_2_LOOP_SIZE) % LINE_2_LOOP_SIZE  // 내선
+    : (board.order - getOff.order + LINE_2_LOOP_SIZE) % LINE_2_LOOP_SIZE; // 외선
+  return diff;
+}
