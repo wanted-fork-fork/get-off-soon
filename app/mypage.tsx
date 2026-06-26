@@ -22,7 +22,7 @@ const EXTERNAL_LINKS = {
   faq: 'https://www.notion.so/36b92f26cef7802b8e7feaf09ca2bc52',
   inquiry: 'https://forms.gle/wJhUwM4fL9o5HdiT6',
   terms: 'https://www.notion.so/36b92f26cef7803dbc47cd6205f43fc7',
-  privacy: 'https://www.notion.so/36b92f26cef780d3a5aff5e3db2982de',
+  privacy: 'https://low-cook-e1a.notion.site/36b92f26cef780d3a5aff5e3db2982de',
   geo: 'https://www.notion.so/36b92f26cef7805dba3aecc2aecff09d',
 } as const;
 
@@ -198,14 +198,14 @@ export default function MyPageScreen() {
           <MenuRow icon={ICONS.question} label="문의하기" onPress={() => openExternalLink(EXTERNAL_LINKS.inquiry)} />
         </View>
 
-        {/* 약관 및 정책 */}
-        {SHOW_HIDDEN_MENUS && (
-          <View style={{ marginBottom: 32 }}>
-            <SectionTitle>약관 및 정책</SectionTitle>
+        {/* 약관 및 정책 — 개인정보 처리방침은 항상 노출, 이용약관은 숨김 유지 */}
+        <View style={{ marginBottom: 32 }}>
+          <SectionTitle>약관 및 정책</SectionTitle>
+          {SHOW_HIDDEN_MENUS && (
             <MenuRow icon={ICONS.terms} label="서비스 이용약관" onPress={() => openExternalLink(EXTERNAL_LINKS.terms)} />
-            <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
-          </View>
-        )}
+          )}
+          <MenuRow icon={ICONS.terms} label="개인정보 처리방침" onPress={() => openExternalLink(EXTERNAL_LINKS.privacy)} />
+        </View>
 
         {/* 로그아웃 / 회원 탈퇴 — 로그인 상태에서만 노출 */}
         {SHOW_HIDDEN_MENUS && loggedIn === true && (
