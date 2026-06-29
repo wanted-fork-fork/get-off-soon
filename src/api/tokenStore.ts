@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as Application from 'expo-application';
 import CryptoJS from 'crypto-js';
 import { setTokenStore } from './client';
-import { createAuthGuest } from './generated';
+import { createAuthGuest, devLogin } from './generated';
 
 const ACCESS_KEY = 'auth.accessToken';
 const REFRESH_KEY = 'auth.refreshToken';
@@ -72,6 +72,13 @@ export function bootstrapAuth(): Promise<void> {
 /** 로그아웃·탈퇴 후 토큰을 비운다. 이후에는 비로그인(게스트) 상태가 된다. */
 export async function resetAuth(): Promise<void> {
   await asyncStorageTokenStore.clearTokens();
+}
+
+/** 개발용 dev 로그인으로 토큰을 발급받아 저장한다. (로그인 화면 버튼에서 사용) */
+export async function signInWithDev(): Promise<void> {
+  const res = await devLogin({});
+  if (!res.accessToken) throw new Error('devLogin: accessToken missing');
+  await asyncStorageTokenStore.setTokens(res.accessToken, res.refreshToken);
 }
 
 /**
